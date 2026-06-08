@@ -1,0 +1,76 @@
+{
+  "survivorItems": [
+    "Flashlight",
+    "Key",
+    "Map",
+    "Med-kit",
+    "Toolbox",
+    "Fog Vial"
+  ],
+  "survivorAddons": [
+    {
+      "itemType": "Flashlight",
+      "addons": ["Battery", "Leather Grip", "Power Bulb", "Wide Lens", "Focus Lens", "Heavy Duty Battery", "Low Amp Filament", "Rubber Grip", "TIR Optic", "Intense Halogen", "Long Life Battery", "High-End Sapphire Lens", "Odd Bulb", "Broken Bulb"]
+    },
+    {
+      "itemType": "Key",
+      "addons": ["Friendship Charm", "Shrill Whistle", "Braided Bauble", "Unique Wedding Ring", "Blood Amber"]
+    },
+    {
+      "itemType": "Map",
+      "addons": ["Glowing Ink", "Gnarled Compass", "Battered Tape", "Sharpened Flint", "Crimson Stamp"]
+    },
+    {
+      "itemType": "Med-kit",
+      "addons": ["Bandages", "Butterfly Tape", "Rubber Gloves", "Medical Scissors", "Needle and Thread", "Self Adherent Wrap", "Sponge", "Gauze Roll", "Surgical Suture", "Abdominal Dressing", "Styptic Agent", "Anti-Exhaustion Syringe", "Refined Serum"]
+    },
+    {
+      "itemType": "Toolbox",
+      "addons": ["Clean Rag", "Instructions", "Scraps", "Cutting Wire", "Protective Gloves", "Socket Swivels", "Spring Clamp", "Wire Spool", "Grip Wrench", "Hacksaw", "Brand New Part"]
+    },
+    {
+        "itemType": "Fog Vial",
+        "addons": ["Volcanic Stone", "Reactive Compound", "Oily Sap", "Mushroom Formula", "Potent Extract"]
+    }
+  ],
+  "killerAddons": {
+    "The Trapper": ["Bear Oil", "Makeshift Wrap", "Padded Jaws", "Trapper Gloves", "4-Coil Spring", "Coffee Grounds", "Lengthened Jaws", "Serrated Jaws", "Wax Brick", "Fastening Tools", "Rusted Jaws", "Secondary Coil", "Tar Bottle", "Trapper Bag", "Honing Stone", "Oily Coil", "Tension Spring", "Trapper Sack", "Iridescent Stone", "Bloody Coil"],
+    "The Wraith": ["'Shadow Dance' - White", "'Blink' - Mud", "'Windstorm' - Blood", "'Swift Hunt' - White", "Coxcombed Clapper", "All Seeing - Spirit"],
+    "The Hillbilly": ["Apex Muffler", "Lovers' Postcard", "Pitted Chuck", "Spiked Boots", "Dad's Boots", "Doom Engravings", "Death Engravings"],
+    "The Nurse": ["Fragile Wheezy", "Ataxic Respiration", "Bad Man's Last Breath", "Campbell's Last Breath", "Kavanagh's Last Breath", "Jenner's Last Breath"],
+    "The Shape": ["Judith's Tombstone", "Tombstone Piece", "Fragile Hair", "Hair Brush", "J. Myers Memorial", "Memorial Flower", "Scratched Mirror", "Vanity Mirror"],
+    "The Hag": ["Waterlogged Shoe", "Rusty Shackles", "Dried Cicada", "Granma's Heart", "Disfigured Ear", "Mint Rag"],
+    "The Doctor": ["Iridescent King", "Iridescent Queen", "Police Badge", "Scrapped Tape", "Interview Tape", "High Stimulus Electrode"],
+    "The Huntress": ["Iridescent Head", "Infantry Belt", "Flower Babushka", "Oak Veneer", "Manna Grass Braid", "Rusty Head", "Begrimed Head"],
+    "The Cannibal": ["Carburettor Tuning Guide", "Award-winning Chili", "Knife Scratches", "The Beast's Marks", "Primer Bulb", "Long Guide Bar"],
+    "The Nightmare": ["Black Box", "Red Paint Brush", "Swing Chains", "Nancy's Sketch", "Blue Dress", "Pill Bottle"],
+    "The Pig": ["Amanda's Letter", "Rules Set No.2", "Tampered Timer", "Jigsaw's Sketch", "Bag of Gears", "Combat Straps"],
+    "The Clown": ["Redhead's Pinky Finger", "Cigar Box", "Flask of Bleach", "Ether 15 Vol%", "Cheap Gin", "Fingerless Gloves"],
+    "The Spirit": ["Mother-Daughter Ring", "Dried Cherry Blossom", "Yakuyoke Amulet", "Rusty Flute", "White Ribbon", "Juniper Bonsai"],
+    "The Legion": ["Iridescent Button", "Fuming Mix Tape", "Filthy Blade", "Stolen Sketch", "Mural Sketch", "Julie's Mix Tape", "Never-Sleep Pills"],
+    "The Plague": ["Iridescent Seal", "Black Incense", "Vile Emetic", "Ashen Apple", "Blessed Apple", "Hematite Seal"],
+    "The Ghost Face": ["'Caught on Camera'", "Driver's License", "Drop-Leg Knife Sheath", "Olsun's Wallet", "Telephoto Lens"],
+    "The Demogorgon": ["Leprose Lichen", "Red Moss", "Mews' Lungs", "Barb's Glasses", "Black Heart", "Rat Tail"],
+    "The Oni": ["Renjiro's Bloody Glove", "Iridescent Family Crest", "Akito's Crutch", "Kanai-Anzen Talisman", "Splintered Hull"],
+    "The Deathslinger": ["Hellshire Iron", "Iridescent Coin", "Bayshore's Gold Tooth", "Prison Chain", "Warden's Keys", "Modified Ammo Belt"],
+    "The Executioner": ["Iridescent Seal of Metatron", "Obsidian Goblet", "Burning Man Painting", "Wax Doll", "Misty Shrub", "Dead Butterfly"],
+    "The Blight": ["Iridescent Blight Tag", "Alchemist's Ring", "Blighted Crow", "Blighted Rat", "Adrenaline Vial", "Compound Thirty-Three"],
+    "The Twins": ["Iridescent Pendant", "Baby Teeth", "Victor's Soldier", "Spinning Top", "Madeleine's Glove", "Toy Sword"],
+    "The Trickster": ["Iridescent Photocard", "Death Throes Compilation", "Diamond Cufflinks", "Melodious Murder", "Ji-Woon's Autograph"],
+    "The Nemesis": ["Iridescent Badge", "Shattered S.T.A.R.S. Badge", "Marvin's Blood", "Tyrant Gore", "Zombie Heart"],
+    "The Cenobite": ["Engineer's Fang", "Iridescent Lament Configuration", "Chatterer's Tooth", "Impaling Wire", "Liquified Eye"],
+    "The Artist": ["Iridescent Feather", "Garden of Rot", "Severed Hands", "Ink Selection", "Velvet Fabric", "Thick Tar"],
+    "The Onryō": ["Iridescent Videotape", "Remote Control", "Old Newspaper", "Well Water", "Telephone", "Cabin Sign"],
+    "The Dredge": ["Iridescent Wooden Horse", "Lavalier Mic", "Boat Key", "Ottomarian Writing", "Burnt Letters", "Broken Doll"],
+    "The Mastermind": ["Iridescent Uroboros Vial", "Lab Card", "Video Conference Device", "Bullwhip", "Leather Gloves"],
+    "The Knight": ["Iridescent Company Banner", "Knight's Contract", "Healing Prison", "Chain Mail Fragment", "Map of the Realm"],
+    "The Skull Merchant": ["Iridescent Unpublished Manuscript", "Water-Logged Diary", "Geographical Readout", "Shotgun Speakers"],
+    "The Singularity": ["Iridescent Crystal Shard", "Soma Family Photo", "Foreign Plant Fibres", "Cremated Remains"],
+    "The Xenomorph": ["Acidic Blood", "Improvised Cattle Prod", "Kane's Helmet", "Lambert's Star Map", "Cereal Rations"],
+    "The Good Guy": ["Iridescent Amulet", "Hard Hat", "Power Drill", "Running Sneakers", "Automatic Screwdriver"],
+    "The Unknown": ["Iridescent Vanishing Box", "Captured Insanity", "Blurry Photo", "Notebook Page", "Homemade Mask"],
+    "The Lich": ["Iridescent Hand of Vecna", "Eye of Vecna", "Lich's Skeleton", "Mirror of Opposition"],
+    "The Dark Lord": ["Iridescent Ring of Vlad", "Clock Tower Gear", "Alucard's Shield", "Ruby Circlet", "Lapis Lazuli", "Dragon Helmet", "Medusa Head"],
+    "The Houndmaster": ["Iridescent Dog Tag", "Heavy Collar", "Huntsman's Whistle", "Rusted Chain", "Leather Leash", "Sharpened Spur", "Blow-whistle", "Scented Oil"]
+  }
+}
