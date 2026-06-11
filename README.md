@@ -36,7 +36,8 @@ Une application web moderne et immersive conçue pour les joueurs de **Dead by D
 2. Assurez-vous d'avoir les fichiers de données suivants à la racine :
    - `perks.json` : Contient la liste des compétences et leurs propriétaires.
    - `equipment.json` : Contient les objets et add-ons.
-3. Ouvrez `index.html` dans votre navigateur (ou via un serveur local comme Live Server).
+3. **Important** : Utilisez impérativement un **serveur local** pour lancer l'application (ex: extension **Live Server** sur VS Code, ou la commande `python -m http.server` dans le dossier).
+   - **Pourquoi ?** L'ouverture directe du fichier `index.html` (protocole `file://`) bloque les requêtes `fetch()` utilisées pour charger les données JSON à cause de la politique de sécurité **CORS** des navigateurs modernes.
 
 ## 📁 Structure des fichiers
 

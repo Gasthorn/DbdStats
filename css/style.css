@@ -249,6 +249,7 @@ select option {
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%;
+  max-width: 300px;
   background: transparent;
   margin: 10px 0;
 }
