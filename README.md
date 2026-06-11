@@ -45,6 +45,21 @@ Une application web moderne et immersive conçue pour les joueurs de **Dead by D
 - `css/style.css` : Design "DBD Dark Theme" et animations.
 - `Icons/` : Dossier contenant les assets graphiques (non inclus dans le dépôt par défaut).
 
+### 🎨 Personnalisation des Icônes
+Le dossier `Icons/` peut être entièrement personnalisé. Vous pouvez y placer vos propres icônes de personnages, perks, objets et add-ons. L'application est conçue pour s'adapter aux noms de fichiers standards.
+
+Pour obtenir des icônes, vous pouvez les récupérer via des outils comme NightLight, ou directement depuis les fichiers du jeu pour les icônes classiques. Assurez-vous de respecter la structure de sous-dossiers attendue par l'application pour une compatibilité optimale.
+
+**Structure minimale attendue :**
+- `Icons/CharPortraits/` : Portraits des personnages (inclut les sous-dossiers par chapitre comme `DLC2/`, `Applepie/`, etc.).
+- `Icons/Perks/` : Icônes des compétences (inclut les sous-dossiers par chapitre).
+- `Icons/ItemAddons/` : Icônes des accessoires (pour tueurs et survivants).
+- `Icons/Items/` : Icônes des objets (survivants).
+
+> [!IMPORTANT]
+> Chaque dossier racine (`CharPortraits`, `Perks`, etc.) doit idéalement contenir un fichier `empty.png` qui sera utilisé comme icône par défaut si une ressource est manquante ou non sélectionnée.
+
+
 ## 📜 Licence
 
 Ce projet est destiné à un usage personnel. Les images et icônes utilisées appartiennent à Behaviour Interactive.
