@@ -583,3 +583,10 @@ ul#history-list li button:first-of-type {
 .animate-roll {
   animation: gauntletRoll 0.5s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
 }
+
+/* Rarity Borders for Killer Addons */
+.rarity-common { border-color: #b38e6d !important; }
+.rarity-uncommon { border-color: #235c24 !important; }
+.rarity-rare { border-color: #1c4562 !important; }
+.rarity-veryrare { border-color: #661e68 !important; }
+.rarity-iridescent { border-color: #a91d1d !important; }

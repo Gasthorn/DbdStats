@@ -43,6 +43,7 @@
         <button onclick="showView('hardcore')">Hardcore</button>
         <button onclick="showView('gauntlet')">Gauntlet</button>
         <button onclick="showView('stats')">Statistiques & Historique</button>
+        <button onclick="showView('icons-index')" style="margin-top: 20px; border-style: dashed; opacity: 0.7;">Index des Icônes</button>
       </div>
     </div>
 
@@ -176,7 +177,7 @@
     </div>
 
     <!-- Sélection du Rôle -->
-    <div id="tracker-view" class="view">
+    <div id="tracker-view" class="view" style="display:none;">
       <section id="role-selection">
         <h2>Choisir un Rôle</h2>
         <button onclick="setRole('killer')">Tueur</button>
@@ -297,6 +298,14 @@
           <button onclick="resetUI()" class="btn-secondary">Annuler / Retour</button>
         </div>
       </section>
+    </div>
+
+    <!-- Index des Icônes -->
+    <div id="icons-index-view" class="view" style="display:none;">
+      <div class="stats-zone">
+        <h2>Index des Assets</h2>
+        <div id="icons-index-content"></div>
+      </div>
     </div>
 
     <!-- Statistiques -->

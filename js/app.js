@@ -7,6 +7,99 @@ let roleDistributionChart = null;
 let viewedDate = new Date(); // Date de référence pour la heatmap (mois en cours)
 let editingMatchIndex = null;
 
+// Mapping des personnages vers leurs dossiers d'icônes spécifiques
+// Les clés de cette map doivent correspondre exactement aux noms des personnages tels qu'ils apparaissent dans perksData.killers et perksData.survivors.
+const characterFolderMap = {
+    "The Unknown": "Applepie",
+    "Sable Ward": "Applepie",
+    "Ashley J. Williams": "Ash",
+    "The Twins": "Aurora",
+    "Élodie Rakoto": "Aurora",
+    "The Cannibal": "Cannibal",
+    "The Lich": "Churros",
+    "The Troupe": "Churros",
+    "The Trickster": "Comet",
+    "Yun-Jin Lee": "Comet",
+    "The Shape": "DLC2",
+    "Laurie Strode": "DLC2",
+    "The Hag": "DLC3",
+    "Ace Visconti": "DLC3",
+    "The Doctor": "DLC4",
+    "Feng Min": "DLC4",
+    "The Huntress": "DLC5",
+    "David King": "DLC5",
+    "Lara Croft": "Donut",
+    "The Dracula": "Eclair",
+    "Trevor Belmont": "Eclair",
+    "The Nemesis": "Eclipse",
+    "Jill Valentine": "Eclipse",
+    "Leon S. Kennedy": "Eclipse",
+    "The Nightmare": "England",
+    "Quentin Smith": "England",
+    "The Pig": "Finland",
+    "Detective David Tapp": "Finland",
+    "The Houndmaster": "Gelato",
+    "Taurie Cain": "Gelato",
+    "The Cenobite": "Gemini",
+    "The Clown": "Guam",
+    "Kate Denson": "Guam",
+    "The Spirit": "Haiti",
+    "Adam Francis": "Haiti",
+    "Mikaela Reid": "Hubble",
+    "The Ghoul": "Icecream",
+    "The Artist": "Ion",
+    "Jonah Vasquez": "Ion",
+    "Orela Rose": "Jerky",
+    "The Legion": "Kenya",
+    "Jeff Johansen": "Kenya",
+    "The Onryō": "Kepler",
+    "Yoichi Asakawa": "Kepler",
+    "The Animatronic": "Ketchup",
+    "William Bill Overbeck": "L4D",
+    "Rick Grimes": "Lasagna",
+    "Michonne Grimes": "Lasagna",
+    "The Plague": "Mali",
+    "Jane Romero": "Mali",
+    "The Krasue": "Maple",
+    "Vee Boonyasak": "Maple",
+    "The Dredge": "Meteor",
+    "Haddie Kaur": "Meteor",
+    "The Ghost Face": "Oman",
+    "The Mastermind": "Orion",
+    "Ada Wong": "Orion",
+    "Rebecca Chambers": "Orion",
+    "The First": "Poutine",
+    "Dustin Henderson": "Poutine",
+    "Eleven": "Poutine",
+    "The Demogorgon": "Qatar",
+    "Steve Harrington": "Qatar",
+    "Nancy Wheeler": "Qatar",
+    "The Knight": "Quantum",
+    "Vittorio Toscano": "Quantum",
+    "Kwon Tae-Young": "Quiche",
+    "Kwon Tae-young": "Quiche",
+    "Kwon Tae Young": "Quiche",
+    "The Skull Merchant": "Saturn",
+    "Thalita Lyra": "Saturn",
+    "Renato Lyra": "Saturn",
+    "The Oni": "Sweden",
+    "Yui Kimura": "Sweden",
+    "The Deathslinger": "Ukraine",
+    "Zarina Kassir": "Ukraine",
+    "The Singularity": "Umbra",
+    "Gabriel Soma": "Umbra",
+    "Nicolas Cage": "Venus",
+    "The Executioner": "Wales",
+    "Cheryl Mason": "Wales",
+    "The Xenomorph": "Wormhole",
+    "Ellen Ripley": "Wormhole",
+    "The Blight": "Yemen",
+    "Felix Richter": "Yemen",
+    "The Good Guy": "Yerkes",
+    "Alan Wake": "Zodiac"
+    // Les personnages sans dossier spécifique dans la liste ci-dessus seront recherchés directement dans "Icons/CharPortraits/"
+};
+
 // --- LOGIQUE HARDCORE ---
 const HC_TIERS = ['Ash', 'Bronze', 'Silver', 'Gold', 'Iridescent'];
 const HC_SUBRANKS = ['IV', 'III', 'II', 'I'];
@@ -138,6 +231,13 @@ function setHardcoreRole(role) {
     updateHCPerksDatalist();
     document.getElementById('hc-survivor-equipment-fields').style.display = role === 'survivor' ? 'flex' : 'none';
     document.getElementById('hc-killer-equipment-fields').style.display = role === 'killer' ? 'flex' : 'none';
+
+    // Mise à jour visuelle des boutons de rôle
+    document.querySelectorAll('#hc-role-selection button').forEach(btn => btn.classList.remove('active-role'));
+    const btnIdx = role === 'killer' ? 0 : 1;
+    document.querySelectorAll('#hc-role-selection button')[btnIdx].classList.add('active-role');
+    document.getElementById('hc-form-title').innerText = `Nouveau Match : ${role === 'killer' ? 'Tueur' : 'Survivant'}`;
+
     renderBuildsList();
 
     const characters = perksData[role === 'killer' ? 'killers' : 'survivors'] || [];
@@ -168,6 +268,14 @@ function setHardcoreRole(role) {
     document.getElementById('hc-did-die').checked = false;
 }
 
+function resetHardcoreUI() {
+    document.getElementById('hc-role-selection').style.display = 'block';
+    document.getElementById('hc-match-form').style.display = 'none';
+    document.querySelectorAll('#hc-role-selection button').forEach(btn => btn.classList.remove('active-role'));
+    document.getElementById('hc-character').value = '';
+    editingMatchIndex = null;
+}
+
 function selectHardcoreChar(name, element) {
     document.querySelectorAll('.hc-char-item').forEach(el => el.classList.remove('selected'));
     element.classList.add('selected');
@@ -181,8 +289,8 @@ function updateHCKillerAddons() {
     const killerName = document.getElementById('hc-character').value;
     const addons = equipmentData.killerAddons[killerName] || [];
     updateDatalist('hc-kill-addons-options', addons);
-    updateImg(document.getElementById('hc-kill-addon-1-icon'), 'Addons', document.getElementById('hc-kill-addon-1').value);
-    updateImg(document.getElementById('hc-kill-addon-2-icon'), 'Addons', document.getElementById('hc-kill-addon-2').value);
+    updateImg(document.getElementById('hc-kill-addon-1-icon'), 'Addons', document.getElementById('hc-kill-addon-1').value, killerName);
+    updateImg(document.getElementById('hc-kill-addon-2-icon'), 'Addons', document.getElementById('hc-kill-addon-2').value, killerName);
 }
 
 function updateHCSurvivorAddons() {
@@ -255,6 +363,7 @@ function saveHardcoreMatch() {
 
     alert(didDie ? `${char} est mort...` : "Match validé !");
     renderHardcoreUI();
+    resetHardcoreUI();
     renderHistory();
     document.getElementById('hc-match-form').style.display = 'none';
 }
@@ -284,8 +393,14 @@ function renderHardcoreUI() {
     document.getElementById('hardcore-season-info').innerText = state.seasonId;
 }
 
-function getIconPath(category, name) {
-    if (!name || name === "None") return `Icons/${category}/empty.png`;
+function getIconPath(category, name, manualOwner = null) {
+    if (!name || name === "None") {
+        // Gestion des dossiers spécifiques pour les icônes vides
+        let folder = category;
+        if (category === 'Characters') folder = 'CharPortraits';
+        if (category === 'Addons') folder = 'ItemAddons';
+        return `Icons/${folder}/empty.png`;
+    }
 
     const normalizeForCharacters = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, '');
     const normalizeForPerks = (str) => {
@@ -293,42 +408,466 @@ function getIconPath(category, name) {
         let normalized = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         // Remove non-alphanumeric characters, but keep spaces for PascalCase conversion
         normalized = normalized.replace(/[^a-zA-Z0-9\s]/g, '');
-        // Convert to PascalCase (e.g., "Ace in the Hole" -> "AceInTheHole")
-        normalized = normalized.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+        // Convert to PascalCase and handle casing (e.g., "vigil" -> "Vigil", "ACE IN THE HOLE" -> "AceInTheHole")
+        normalized = normalized.split(' ')
+            .filter(word => word.length > 0)
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join('');
         return normalized;
     };
 
-    if (category === 'Characters') {
+    // Helper pour trouver les infos de dossier et préfixe (pour Maple, Poutine, Quiche)
+    const getFolderInfo = (ownerName, currentCategory) => {
+        if (!ownerName || ownerName === "Base Kit") return { path: "", prefix: "" };
+        let folder = characterFolderMap[ownerName];
+
+        // Exception : Kate Denson utilise le dossier "Kate" pour ses perks, mais "Guam" pour son portrait
+        if (currentCategory === 'Perks' && ownerName === "Kate Denson") {
+            folder = "Kate";
+        }
+
+        // Exception pour Le Cannibale : ses accessoires sont majoritairement à la racine, sauf quelques exceptions
+        if (currentCategory === 'Addons' && ownerName === "The Cannibal") {
+            folder = null;
+        }
+
+        if (!folder) return { path: "", prefix: "" };
+
+        const path = `${folder}/`;
+        let prefix = '';
         
+        // Dossiers utilisant T_UI_ pour TOUS leurs assets (Portraits, Perks, Addons)
+        const uiPrefixAllFolders = ['Maple', 'Poutine', 'Quiche'];
+
+        // Dossiers utilisant T_UI_ pour les Perks et les Addons (mais pas les Portraits)
+        const uiPrefixPerksAndAddonsFolders = ['Gelato', 'Icecream', 'Ketchup'];
+
+        // Dossiers utilisant T_UI_ UNIQUEMENT pour les Perks
+        const uiPrefixPerksOnlyFolders = ['Jerky', 'Lasagna'];
+
+        if (uiPrefixAllFolders.includes(folder)) {
+            prefix = 'T_UI_';
+        } else if (uiPrefixPerksAndAddonsFolders.includes(folder) && (currentCategory === 'Perks' || currentCategory === 'Addons')) {
+            prefix = 'T_UI_';
+        } else if (uiPrefixPerksOnlyFolders.includes(folder) && currentCategory === 'Perks') {
+            prefix = 'T_UI_';
+        } else if (folder === 'Ion' && currentCategory === 'Perks') {
+            prefix = 'T_';
+        }
+
+        return { path, prefix };
+    };
+
+    if (category === 'Characters') {
+        let charTypePrefix = '';
+        let charId = '';
+
+        // Exception pour certains noms de fichiers de portraits
+        let fileNamePart = name;
+        if (name === "The Good Guy") fileNamePart = "The Yerkes";
+
+        // Récupère le nom du dossier spécifique pour le personnage. Si non trouvé, le personnage est à la racine de CharPortraits.
+        const { path, prefix } = getFolderInfo(name, category);
+        const baseCharPath = `Icons/CharPortraits/${path}`;
+
         // Recherche dans les tueurs
         let index = perksData.killers.indexOf(name);
         if (index !== -1) {
-            const id = String(index + 1).padStart(2, '0');
-            return `Icons/Characters/K${id}_${normalizeForCharacters(name)}_Portrait.png`;
+            charTypePrefix = 'K';
+            charId = String(index + 1).padStart(2, '0');
+            return `${baseCharPath}${prefix}${charTypePrefix}${charId}_${normalizeForCharacters(fileNamePart)}_Portrait.png`;
         }
         
         // Recherche dans les survivants
         index = perksData.survivors.indexOf(name);
         if (index !== -1) {
-            const id = String(index + 1).padStart(2, '0');
-            return `Icons/Characters/S${id}_${normalizeForCharacters(name)}_Portrait.png`;
+            charTypePrefix = 'S';
+            charId = String(index + 1).padStart(2, '0');
+            return `${baseCharPath}${prefix}${charTypePrefix}${charId}_${normalizeForCharacters(fileNamePart)}_Portrait.png`;
         }
-        return `Icons/Characters/empty.png`;
+        // Fallback si le personnage n'est trouvé ni dans les tueurs ni dans les survivants (ex: personnage custom non listé)
+        // ou si le nom n'est pas dans characterFolderMap et n'est pas un personnage standard.
+        return `Icons/CharPortraits/empty.png`; // Chemin par défaut pour les icônes de personnages vides/inconnus
     } else if (category === 'Perks') {
-        return `Icons/Perks/iconPerks_${normalizeForPerks(name)}.png`;
+        // Mappings pour les perks dérivées (utilisent l'icône d'une autre perk)
+        const derivativeMapping = {
+            "Bound By Obsession": "Object of Obsession",
+            "Bound by Obsession": "Object of Obsession",
+            "Down To The Last": "Sole Survivor",
+            "Will to Live": "Decisive Strike",
+            "Hex: Fortune's Fool": "Hex: Plaything",
+            "Keep Them Waiting": "Save the Best for Last",
+            "No Holds Barred": "Deadlock",
+            "Scourge Hook: Weeping Wounds": "Scourge Hook: Gift of Pain",
+            "See How They Run": "Play With Your Food",
+            "Cull the Weak": "Dying Light",
+            "Cull of the Weak": "Dying Light"
+        };
+        const searchName = derivativeMapping[name.trim()] || name.trim();
+
+        // Trouver le propriétaire de la perk pour déterminer le dossier
+        const allPerks = [...(perksData.killer || []), ...(perksData.survivor || [])];
+        const perk = allPerks.find(p => p.name.toLowerCase() === searchName.toLowerCase());
+        let officialName = perk ? perk.name : searchName;
+
+        // Table de correspondance pour les noms de fichiers d'icônes capricieux
+        const perkNameMapping = {
+            "Boon: Dark Theory": "Dark Theory",
+            "Boon: Illumination": "Illumination",
+            "Quick Gambit": "Vittorios Gambit",
+            "Awakened Awareness": "Awakened Awarenesss",
+            "Barbecue & Chilli": "BBQAndChili",
+            "Cruel Limits": "CruelConfinement",
+            "Darkness Revealed": "DarknessRevelated",
+            "Dead Man's Switch": "DeadManSwitch",
+            "Franklin's Demise": "FranklinsLoss",
+            "Hex: Devour Hope": "DevourHope",
+            "Hex: Ruin": "Ruin",
+            "Hex: Thrill of the Hunt": "ThrillOfTheHunt",
+            "Hex: Haunted Ground": "HauntedGround",
+            "Hex: Huntress Lullaby": "HuntressLullaby",
+            "Hex: No One Escapes Death": "NoOneEscapesDeath",
+            "Hex: Nothing but Misery": "NothingButMisery",
+            "Hex: The Third Seal": "TheThirdSeal",
+            "Hex: Two Can Play": "twoCanPlay",
+            "Machine Learning": "SelfAware",
+            "Overcharge": "GeneratorOvercharge",
+            "Rancor": "Hatred",
+            "Scourge Hook: Floods of Rage": "FloodOfRage",
+            "Scourge Hook: Hangman's Trick": "HangmansTrick",
+            "Scourge Hook: Monstrous Shrine": "MonstrousShrine",
+            "Scourge Hook: Pain Resonance": "PainResonance",
+            "Thanatophobia": "Thatanophobia",
+            "Shattered Hope": "BoonDestroyer"
+        };
+
+        if (perkNameMapping[officialName]) {
+            officialName = perkNameMapping[officialName];
+        }
+
+        let owner = perk ? perk.owner : null;
+        // Exceptions pour les perks "Base Kit" situées dans des dossiers de DLC
+        if (searchName === "Shattered Hope") owner = "The Dredge";
+        if (searchName === "Hex: Thrill of the Hunt") owner = "The Hag";
+
+        const { path, prefix } = getFolderInfo(owner, category);
+
+        // Liste des personnages utilisant "iconsPerks" au lieu de "iconPerks"
+        const specialPrefixOwners = [
+            "Sable Ward", "Taurie Cain", "Orela Rose", "Dustin Henderson",
+            "Eleven", "The First", "Kwon Tae-young", "Kwon Tae-Young",
+            "Kwon Tae Young", "Alan Wake"
+        ];
+
+        const perkFilePrefix = specialPrefixOwners.includes(owner) ? 'iconsPerks_' : 'iconPerks_';
+        
+        let perkFileName = normalizeForPerks(officialName);
+
+        // Forçage du nom de fichier pour les cas où la normalisation PascalCase casserait le nom
+        if (officialName === "Self-Preservation" || officialName === "twoCanPlay") {
+            perkFileName = officialName;
+        }
+
+        return `Icons/Perks/${path}${prefix}${perkFilePrefix}${perkFileName}.png`;
     } else if (category === 'Addons') {
-        return `Icons/Addons/iconAddon_${normalizeForPerks(name)}.png`;
+        const survivorAddonMapping = {
+            "Low Amp Filament": "threadedFilament",
+            "Unique Wedding Ring": "uniqueRing",
+            "Rubber Gloves": "gloves",
+            "Medical Scissors": "scissors",
+            "Needle and Thread": "needAndThread",
+            "Gauze Roll": "gauseRoll",
+            "Anti-Exhaustion Syringe": "syringe",
+            "Wire Spool": "spoolOfWire",
+            "Hacksaw": "metalSaw",
+            // Exceptions dossier Lasagna (TWD)
+            "Friendship Charm": "Lasagna/T_UI_iconIAddon_FriendshipCharm",
+            "Shrill Whistle": "Lasagna/T_UI_iconAddon_ShrillWhistle",
+            "Braided Bauble": "Lasagna/T_UI_iconAddon_BraidedBauble",
+            "Glowing Ink": "Lasagna/T_UI_iconAddon_GlowingInk",
+            "Gnarled Compass": "Lasagna/T_UI_iconAddon_GnarledCompass",
+            "Battered Tape": "Lasagna/T_UI_iconAddon_BatteredTape",
+            "Sharpened Flint": "Lasagna/T_UI_iconAddon_SharpenedFlint",
+            "Crimson Stamp": "Lasagna/T_UI_iconAddon_CrimsonStamp",
+            "Volcanic Stone": "Lasagna/T_UI_iconAddon_volcanicStone",
+            "Reactive Compound": "Lasagna/T_UI_iconAddon_reactiveCompound",
+            "Oily Sap": "Lasagna/T_UI_iconAddon_oilySap",
+            "Mushroom Formula": "Lasagna/T_UI_iconAddon_mushroomFormula",
+            "Potent Extract": "Lasagna/T_UI_iconAddon_potentExtract"
+        };
+
+        if (survivorAddonMapping[name]) {
+            const mapped = survivorAddonMapping[name];
+            return `Icons/ItemAddons/${mapped.includes('/') ? mapped : 'iconAddon_' + mapped}.png`;
+        }
+
+        // Déterminer le tueur propriétaire de l'accessoire (priorité au propriétaire sélectionné)
+        let ownerKiller = (manualOwner && equipmentData.killerAddons[manualOwner]) ? manualOwner : null;
+
+        if (!ownerKiller) {
+            for (const k in equipmentData.killerAddons) {
+                if (equipmentData.killerAddons[k].includes(name)) {
+                    ownerKiller = k;
+                    break;
+                }
+            }
+        }
+
+        if (ownerKiller) {
+            // Addons de tueurs dans ItemAddons/[RepoName]/
+            const { path, prefix } = getFolderInfo(ownerKiller, category, name);
+            const killerAddonMapping = {
+                // The Trapper Addons
+                "4-Coil Spring Kit": "coilsKit4",
+                "Coffee Grounds": "coffeeGrinds",
+                "Iridescent Stone": "diamondStone",
+
+                // The Wraith Addons
+                "The Beast - Soot": "sootTheBeast",
+                "The Ghost - Soot": "sootTheGhost",
+                "The Hound - Soot": "sootTheHound",
+                "The Serpent - Soot": "sootTheSerpent",
+                "Blind Warrior - Mud": "mudBaikraKaeug",
+                "Blink - Mud": "mudBlink",
+                "Swift Hunt - Mud": "mudSwiftHunt",
+                "Windstorm - Mud": "mudWindstorm",
+                "Blind Warrior - White": "whiteBlindWarrior",
+                "Blink - White": "whiteBlink",
+                "Shadow Dance - White": "whiteShadowDance",
+                "Swift Hunt - White": "whiteKuntinTakkho",
+                "Windstorm - White": "whiteWindstorm",
+                "All Seeing - Blood": "bloodKraFabai",
+                "Shadow Dance - Blood": "bloodShadowDance",
+                "Swift Hunt - Blood": "bloodSwiftHunt",
+                "Windstorm - Blood": "bloodWindstorm",
+                "All Seeing - Spirit": "spiritAllSeeing",
+
+                //The HillBilly
+                "Counterweight": "Zodiac/iconAddon_counterweight",
+                "Cracked Primer Bulb": "Zodiac/iconAddon_crackedPrimerBulb",
+                "Discarded Air Filter": "Zodiac/iconAddon_discardedAirFilter",
+                "Steel Toe Boots": "Xipre/iconAddon_steelToeBoots",
+                "Clogged Intake": "Zodiac/iconAddon_cloggedIntake",
+                "Greased Throttle": "Zodiac/iconAddon_greasedThrottle",
+                "High-Speed Idler Screw": "Zodiac/iconAddon_highSpeedIdlerScrew",
+                "Off-Brand Motor Oil": "Xipre/iconAddon_offBrandMotorOil",
+                "Thermal Casing": "Zodiac/iconAddon_thermalCasing",
+                "Begrimed Chains": "iconAddon_chainsBloody",
+                "Dad's Boots": "Xipre/iconAddon_dadsBoots",
+                "Low Kickback Chains": "Xipre/iconAddon_lowKickbackChains",
+                "Ragged Engine": "Zodiac/iconAddon_raggedEngine",
+                "Apex Muffler": "Xipre/iconAddon_apexMuffler",
+                "Filthy Slippers": "Zodiac/iconAddon_filthySlippers",
+                "LoPro Chains": "Xipre/iconAddon_lowProChains",
+                "Iridescent Engravings": "Zodiac/iconAddon_iridescentEngravings",
+                "Tuned Carburettor": "Xipre/iconAddon_tunedCarburetor",
+
+                //The Nurse
+                "Catatonic Boy's Treasure": "catatonicTreasure",
+
+                //The Shape
+                "Blond Hair": "blondeHair",
+                "Fragrant Tuft of Hair": "tuftOfHair",
+                "Jewellery": "jewelry",
+                "Jewellery Box": "jewelryBox",
+
+                //The Hag
+                "Grandma's Heart": "granmasHeart",
+
+                //The Doctor
+                "Mouldy Electrode": "moldyElectrode",
+                "Discipline - Class II": "diciplineClassII",
+                "Discipline - Class III": "diciplineClassIII",
+                "Discipline - Carter's Notes": "diciplineCartersNotes",
+
+                // The Cannibal 
+                "Award-winning Chilli": "Cannibal/iconAddon_awardWinningChili",
+                "Chilli": "Cannibal/iconAddon_Chili",
+                "Iridescent Flesh": "Cannibal/iconAddon_IridescentFlesh",
+                "Knife Scratches": "Cannibal/iconAddon_KnifeScratches",
+                "The Beast's Marks": "Cannibal/iconAddon_theBeastsMark",
+                "The Grease": "Cannibal/iconAddon_TheGrease",
+                "Grisly Chains": "chainsGrisly",
+                "Rusted Chains": "chainsRusted",
+                "Carburettor Tuning Guide": "carburetorTuningGuide",
+                "Begrimed Chains": "chainsBloody",
+
+                //The Pig
+                "Razor Wires": "razerWire",
+                "Rules Set No.2": "rulesSetN2",
+
+                //The Clown
+                "Sulphuric Acid Vial" : "sulfuricAcidVial",
+                "Ether 15 Vol%": "ether15",
+                "RedHead's Pinkie Finger": "redheadsPinkyFinger",
+
+                //The Spirit
+                "Muddy Sports Day Cap": "muddySportCap",
+                "Mother's Glasses": "Hubble/iconAddon_mothersGlasses",
+                "Senko Hanabi": "Hubble/iconAddon_senkoHanabi",
+                "Uchiwa": "Hubble/iconAddon_uchiwa",
+                "Furin": "Hubble/iconAddon_furin",
+                "Kintsugi Teacup": "Hubble/iconAddon_kintsugiTeacup",
+
+                //The Legion
+                "Smiley Face Pin": "smileyFaceButton",
+                "Defaced Smiley Pin": "defacedSmileyButton",
+                "Stylish Sunglasses": "nastyBlade",
+                "Susie's Mix Tape": "suziesMixtape",
+                "The Legion Pin": "theLegionButton",
+                "BFFs": "coldDirt",
+
+                //The Plague
+                "Blessed Apple": "prayerApple",
+                "Haematite Seal": "hematiteSeal",
+
+                //The Ghost Face
+                "Cinch Straps": "reusuableCinchStraps",
+                "Night Vision Monocular": "nightvisionMoncular",
+                "Ghost Face Caught on Tape": "caughtOnTape",
+
+                //The Oni
+                "Renjiro's Bloody Glove": "renirosBloodyGlove",
+
+                //The Deathslinger
+                "Gold Creek Whiskey": "clearCreekWhiskey",
+
+                //The Executioner
+                "Misty Day, Remains of Judgement": "mistyDay",
+                "Iridescent Seal of Metatron": "iridescentSeal",
+
+                //The Trickster
+                "Inferno Wires": "Comet/icons_Addon_InfernoWires",
+                "Killing Part Chords": "Comet/icons_Addon_KillingPartChords",
+                "Memento Blades": "Comet/icons_Addon_MementoBlades",
+                "Trick Pouch": "Comet/icons_Addon_TrickPouch",
+                "Bloody Boa": "Comet/icons_Addon_BloodyBoa",
+                "Caged Heart Shoes": "Comet/icons_Addon_CagedHeartShoes",
+                "Ji-Woon's Autograph": "Comet/icons_Addon_JiWoonsAutograph",
+                "Lucky Blade": "Comet/icons_Addon_LuckyBlade",
+                "Tequila Moonrock": "Comet/icons_Addon_TequilaMoonrock",
+                "Fizz-Spin Soda": "Comet/icons_Addon_FizzSpinSoda",
+                "Melodious Murder": "Comet/icons_Addon_YumisMurder",
+                "On Target Single": "Comet/icons_Addon_OnTargetSingle",
+                "Ripper Brace": "Comet/icons_Addon_RipperBrace",
+                "Waiting For You Watch": "Comet/icons_Addon_WaitingForYouWatch",
+                "Cut Thru U Single": "Comet/icons_Addon_CutThruUSingle",
+                "Diamond Cufflinks": "Comet/icons_Addon_DiamondCufflinks",
+                "Edge of Revival Album": "Comet/icons_Addon_EdgeOfRevivalAlbum",
+                "Trick Blades": "Comet/icons_Addon_TrickBlades",
+                "Death Throes Compilation": "Comet/icons_Addon_DeathThroesCompilation",
+                "Iridescent Photocard": "Comet/icons_Addon_IridescentPhotocard",
+
+                //The Nemesis
+                "Jill's Sandwich": "jillSandwich",
+
+                //The Artist
+                "Matias' Baby Shoes": "JacobsBabyShoes",
+
+                //The Onryo
+                "Videotape Copy": "VhsCopy",
+                "Distorted Photo": "DisortedPhoto",
+                "Iridescent Videotape": "IridescentVHStape",
+
+                //The Dredge
+                "Air Freshener": "AirFreshner",
+                
+                //The Mastermind
+                "Maiden Medallion": "maidenMedalliom",
+                "Uroboros Virus": "lasPlagasVariant",
+
+                //The Knight
+                "Town Watch's Torch": "TownWatctTorch",
+                "Sharpened Mount": "Donut/iconAddon_SharpenedMount",
+                "Jailer's Chimes": "Donut/iconAddon_JailersChimes",
+
+                //The Skullmerchant
+                "Adi Valente Issue 1": "AdiValente1",
+                "Ultrasonic Speaker": "UltrasonicTrapSpeaker",
+                "Supercharge": "overcharge",
+                "Infrared Upgrade": "infaredUpgrade",
+                "Randomised Strobes": "RandomizedStrobes",
+
+                //The Singularity
+                "Foreign Plant Fibres": "foreignPlantFibers",
+                "Iridescent Crystal Shard": "iridiscentCrystalShard",
+
+                //The Good Guy
+                "Hair Spray and Candle": "flamingHairSpray",
+
+                //The Unknown
+                "B-Movie Poster": "B-MoviePoster",
+
+                //The Lich
+                "Vorpal Sword": "SwordOfKass",
+
+                //The Dracula
+                "Traveller's Hat": "TravelersHat",
+
+                //The Ghoul
+                "Kaneki's Satchel": "satchel",
+                "Torture Apparatus": "medicalApparatus",
+                
+                //The Animatronic
+                "Foxy's Hook": "foxyHook",
+                
+                //The Krasue
+                "Spattered Handkerchief": "SpottedHandkerchief",
+                "Mysterious Elixir": "IridescentElixir",
+
+
+                //The First
+                "Mid-Century Radio": "Mid-CenturyRadio",
+                
+            };
+
+            const fileName = killerAddonMapping[name] || normalizeForPerks(name);
+            if (fileName.includes('/')) return `Icons/ItemAddons/${fileName}.png`;
+            if (fileName.startsWith('iconAddon_')) return `Icons/ItemAddons/${path}${prefix}${fileName}.png`;
+            return `Icons/ItemAddons/${path}${prefix}iconAddon_${fileName}.png`;
+        }
+        // Addons de survivants (ou fallback) dans le dossier Addons standard
+        return `Icons/ItemAddons/iconAddon_${normalizeForPerks(name)}.png`;
     } else if (category === 'Items') {
+        if (name === "Fog Vial") {
+            return `Icons/Items/T_UI_iconItems_apprenticesFogVial.png`;
+        }
         return `Icons/Items/iconItems_${normalizeForPerks(name)}.png`;
     }
     return `Icons/${category}/empty.png`;
 }
 
-function updateImg(img, category, name) {
-    img.src = getIconPath(category, name);
+function getKillerAddonRarityClass(index) {
+    if (index < 0) return '';
+    if (index < 4) return 'rarity-common';     // 4 addons
+    if (index < 9) return 'rarity-uncommon';   // 5 addons
+    if (index < 14) return 'rarity-rare';      // 5 addons
+    if (index < 18) return 'rarity-veryrare';  // 4 addons
+    return 'rarity-iridescent';                // 2 addons
+}
+
+function updateImg(img, category, name, owner = null) {
+    img.src = getIconPath(category, name, owner);
     img.style.display = 'inline-block';
-    img.onerror = () => {
-        img.src = `Icons/${category}/empty.png`;
+
+    // Gestion de la bordure de rareté pour les addons de tueurs
+    const parent = img.parentElement;
+    if (parent && parent.classList.contains('selection-slot')) {
+        // Nettoyage des classes de rareté précédentes
+        parent.classList.remove('rarity-common', 'rarity-uncommon', 'rarity-rare', 'rarity-veryrare', 'rarity-iridescent');
+        
+        if (category === 'Addons' && owner && equipmentData.killerAddons[owner]) {
+            const index = equipmentData.killerAddons[owner].indexOf(name);
+            const rarityClass = getKillerAddonRarityClass(index);
+            if (rarityClass) parent.classList.add(rarityClass);
+        }
+    }
+
+    img.onerror = () => { // Le chemin de fallback doit aussi être mis à jour
+        let folder = category;
+        if (category === 'Characters') folder = 'CharPortraits';
+        if (category === 'Addons') folder = 'ItemAddons';
+        img.src = `Icons/${folder}/empty.png`;
     };
 }
 
@@ -425,8 +964,8 @@ function updateKillerAddons() {
     const killerName = document.getElementById('character').value;
     const addons = equipmentData.killerAddons[killerName] || [];
     updateDatalist('kill-addons-options', addons);
-    updateImg(document.getElementById('kill-addon-1-icon'), 'Addons', document.getElementById('kill-addon-1').value);
-    updateImg(document.getElementById('kill-addon-2-icon'), 'Addons', document.getElementById('kill-addon-2').value);
+    updateImg(document.getElementById('kill-addon-1-icon'), 'Addons', document.getElementById('kill-addon-1').value, killerName);
+    updateImg(document.getElementById('kill-addon-2-icon'), 'Addons', document.getElementById('kill-addon-2').value, killerName);
 }
 
 function updateSurvivorAddons() {
@@ -516,8 +1055,67 @@ function showView(viewId) {
     } else if (viewId === 'gauntlet') {
         renderGauntletUI();
     } else if (viewId === 'hardcore') {
+        resetHardcoreUI();
         renderHardcoreUI();
+    } else if (viewId === 'icons-index') {
+        renderIconsIndex();
     }
+}
+
+function renderIconsIndex() {
+    const container = document.getElementById('icons-index-content');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const sections = [
+        { title: 'Portraits : Tueurs', category: 'Characters', items: perksData.killers },
+        { title: 'Portraits : Survivants', category: 'Characters', items: perksData.survivors },
+        { title: 'Compétences : Tueurs', category: 'Perks', items: perksData.killer.map(p => p.name) },
+        { title: 'Compétences : Survivants', category: 'Perks', items: perksData.survivor.map(p => p.name) },
+        { title: 'Objets', category: 'Items', items: equipmentData.survivorItems }
+    ];
+
+    // Addons Survivants par type d'item
+    if (equipmentData.survivorAddons) {
+        equipmentData.survivorAddons.forEach(group => {
+            sections.push({
+                title: `Addons : ${group.itemType}`,
+                category: 'Addons',
+                items: group.addons
+            });
+        });
+    }
+
+    // Addons Tueurs par tueur
+    for (const killer in equipmentData.killerAddons) {
+        sections.push({ title: `Addons : ${killer}`, category: 'Addons', items: equipmentData.killerAddons[killer], owner: killer });
+    }
+
+    sections.forEach(sec => {
+        const h3 = document.createElement('h3');
+        h3.innerText = sec.title;
+        h3.style.marginTop = "40px";
+        container.appendChild(h3);
+
+        const grid = document.createElement('div');
+        grid.className = 'hc-grid';
+        grid.style.maxHeight = 'none'; // Pour tout voir sur une seule page
+
+        sec.items.forEach(name => {
+            const wrapper = document.createElement('div');
+            wrapper.className = sec.category === 'Characters' ? 'hc-char-item' : 'selection-slot';
+            if (sec.category === 'Perks') wrapper.classList.add('perk-container');
+            
+            const img = document.createElement('img');
+            img.title = name;
+            if (sec.category === 'Perks') img.className = 'perk-icon';
+            
+            wrapper.appendChild(img);
+            updateImg(img, sec.category, name, sec.owner);
+            grid.appendChild(wrapper);
+        });
+        container.appendChild(grid);
+    });
 }
 
 function saveBuild() {
@@ -1294,8 +1892,14 @@ window.onload = async () => {
 
     document.getElementById('hc-surv-addon-1').addEventListener('input', (e) => updateImg(document.getElementById('hc-surv-addon-1-icon'), 'Addons', e.target.value));
     document.getElementById('hc-surv-addon-2').addEventListener('input', (e) => updateImg(document.getElementById('hc-surv-addon-2-icon'), 'Addons', e.target.value));
-    document.getElementById('hc-kill-addon-1').addEventListener('input', (e) => updateImg(document.getElementById('hc-kill-addon-1-icon'), 'Addons', e.target.value));
-    document.getElementById('hc-kill-addon-2').addEventListener('input', (e) => updateImg(document.getElementById('hc-kill-addon-2-icon'), 'Addons', e.target.value));
+    document.getElementById('hc-kill-addon-1').addEventListener('input', (e) => {
+        const char = document.getElementById('hc-character').value;
+        updateImg(document.getElementById('hc-kill-addon-1-icon'), 'Addons', e.target.value, char);
+    });
+    document.getElementById('hc-kill-addon-2').addEventListener('input', (e) => {
+        const char = document.getElementById('hc-character').value;
+        updateImg(document.getElementById('hc-kill-addon-2-icon'), 'Addons', e.target.value, char);
+    });
 
     document.getElementById('surv-item').addEventListener('input', (e) => {
         updateSurvivorAddons();
@@ -1319,15 +1923,15 @@ window.onload = async () => {
     });
 
     document.getElementById('kill-addon-1').addEventListener('input', (e) => {
-        updateImg(document.getElementById('kill-addon-1-icon'), 'Addons', e.target.value);
         const killerName = document.getElementById('character').value;
+        updateImg(document.getElementById('kill-addon-1-icon'), 'Addons', e.target.value, killerName);
         const list = equipmentData.killerAddons[killerName];
         if ((list && list.includes(e.target.value)) || e.target.value === "None") e.target.blur();
     });
 
     document.getElementById('kill-addon-2').addEventListener('input', (e) => {
-        updateImg(document.getElementById('kill-addon-2-icon'), 'Addons', e.target.value);
         const killerName = document.getElementById('character').value;
+        updateImg(document.getElementById('kill-addon-2-icon'), 'Addons', e.target.value, killerName);
         const list = equipmentData.killerAddons[killerName];
         if ((list && list.includes(e.target.value)) || e.target.value === "None") e.target.blur();
     });
