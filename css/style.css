@@ -41,6 +41,12 @@ nav#main-nav {
   justify-content: center;
   gap: 15px;
   margin-bottom: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #1a1a1a;
+  padding: 15px 0;
+  border-bottom: 1px solid #333;
 }
 
 button {
@@ -518,8 +524,20 @@ ul#history-list li.escaped-match {
 /* HARDCORE SPECIFIC */
 .blocked-char {
   filter: grayscale(1) brightness(0.5);
-  pointer-events: none;
   border-color: #555 !important;
+}
+
+/* Indicateur de verrouillage (Cadenas) */
+.blocked-char::after {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  z-index: 3;
+  text-shadow: 0 0 5px #000;
+  pointer-events: none;
 }
 
 .rank-display {

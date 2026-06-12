@@ -100,6 +100,47 @@ const characterFolderMap = {
     // Les personnages sans dossier spécifique dans la liste ci-dessus seront recherchés directement dans "Icons/CharPortraits/"
 };
 
+// --- LOGIQUE PERSONNAGES DÉBLOQUÉS ---
+const BASE_UNLOCKED = {
+    killers: ["The Trapper", "The Wraith", "The Hillbilly", "The Nurse", "The Huntress"],
+    survivors: ["Dwight Fairfield", "Meg Thomas", "Claudette Morel", "Jake Park", "Nea Karlsson", "David King", "William Bill Overbeck"]
+};
+
+function getUnlockedChars() {
+    let unlocked = JSON.parse(localStorage.getItem('dbd_unlocked_chars'));
+    if (!unlocked) {
+        unlocked = BASE_UNLOCKED;
+        localStorage.setItem('dbd_unlocked_chars', JSON.stringify(unlocked));
+    }
+    return unlocked;
+}
+
+function toggleCharUnlock(role, name) {
+    let unlocked = getUnlockedChars();
+    const list = unlocked[role];
+    const idx = list.indexOf(name);
+    if (idx > -1) list.splice(idx, 1);
+    else list.push(name);
+    localStorage.setItem('dbd_unlocked_chars', JSON.stringify(unlocked));
+    renderUnlockedChars();
+}
+
+function unlockAllChars() {
+    const unlocked = {
+        killers: [...perksData.killers],
+        survivors: [...perksData.survivors]
+    };
+    localStorage.setItem('dbd_unlocked_chars', JSON.stringify(unlocked));
+    renderUnlockedChars();
+}
+
+function resetCharsToDefault() {
+    if (confirm("Voulez-vous réinitialiser votre liste aux personnages gratuits de base ?")) {
+        localStorage.removeItem('dbd_unlocked_chars');
+        renderUnlockedChars();
+    }
+}
+
 // --- LOGIQUE HARDCORE ---
 const HC_TIERS = ['Ash', 'Bronze', 'Silver', 'Gold', 'Iridescent'];
 const HC_SUBRANKS = ['IV', 'III', 'II', 'I'];
@@ -151,15 +192,29 @@ function getHardcoreState() {
     return state;
 }
 
+function resetHardcoreMode() {
+    if (confirm("Voulez-vous réinitialiser votre progression Hardcore pour cette saison (Pips et personnages morts) ?")) {
+        localStorage.removeItem('dbd_hc_state');
+        renderHardcoreUI();
+        resetHardcoreUI();
+    }
+}
+
 function getAvailableHardcorePerks(role, selectedChar) {
     const state = getHardcoreState();
+    const unlocked = getUnlockedChars();
+    const roleKey = role === 'killer' ? 'killers' : 'survivors';
     const deadChars = role === 'killer' ? state.deadKillers : state.deadSurvivors;
     const allPerks = perksData[role] || [];
     
     return allPerks.filter(perk => {
+        // La perk doit appartenir à un personnage débloqué ou être du Base Kit
+        const isUnlocked = perk.owner === "Base Kit" || (unlocked[roleKey] && unlocked[roleKey].includes(perk.owner));
+        
+        // On autorise quand même la perk si c'est celle du perso sélectionné (cas particulier)
+        if (!isUnlocked && perk.owner !== selectedChar) return false;
+
         if (perk.owner === "Base Kit") return true;
-        // La perk est disponible si son propriétaire n'est pas mort, 
-        // OU si c'est la perk propre du personnage actuellement sélectionné.
         return !deadChars.includes(perk.owner) || perk.owner === selectedChar;
     });
 }
@@ -240,7 +295,8 @@ function setHardcoreRole(role) {
 
     renderBuildsList();
 
-    const characters = perksData[role === 'killer' ? 'killers' : 'survivors'] || [];
+    const unlocked = getUnlockedChars()[role === 'killer' ? 'killers' : 'survivors'];
+    const characters = (perksData[role === 'killer' ? 'killers' : 'survivors'] || []).filter(c => unlocked.includes(c));
     const deadList = role === 'killer' ? state.deadKillers : state.deadSurvivors;
     
     const editingMatch = editingMatchIndex !== null ? history[editingMatchIndex] : null;
@@ -251,6 +307,7 @@ function setHardcoreRole(role) {
         // Si le perso est mort mais n'est pas celui du match qu'on modifie actuellement
         if (deadList.includes(char) && (!editingMatch || editingMatch.character !== char)) {
             item.classList.add('blocked-char');
+            item.style.pointerEvents = 'none'; // Désactive le clic seulement en mode Hardcore
         } else {
             item.onclick = () => selectHardcoreChar(char, item);
         }
@@ -837,6 +894,44 @@ function getIconPath(category, name, manualOwner = null) {
     return `Icons/${category}/empty.png`;
 }
 
+function renderUnlockedChars() {
+    const container = document.getElementById('unlocked-chars-content');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const unlocked = getUnlockedChars();
+    const roles = [
+        { title: 'Tueurs', key: 'killers', data: perksData.killers },
+        { title: 'Survivants', key: 'survivors', data: perksData.survivors }
+    ];
+
+    roles.forEach(role => {
+        const h3 = document.createElement('h3');
+        h3.innerText = role.title;
+        container.appendChild(h3);
+
+        const grid = document.createElement('div');
+        grid.className = 'hc-grid';
+        grid.style.maxHeight = 'none';
+
+        role.data.forEach(name => {
+            const isUnlocked = unlocked[role.key].includes(name);
+            const item = document.createElement('div');
+            item.className = 'hc-char-item';
+            if (!isUnlocked) item.classList.add('blocked-char');
+            item.onclick = () => toggleCharUnlock(role.key, name);
+
+            const img = document.createElement('img');
+            img.src = getIconPath('Characters', name);
+            img.title = name;
+
+            item.appendChild(img);
+            grid.appendChild(item);
+        });
+        container.appendChild(grid);
+    });
+}
+
 function getKillerAddonRarityClass(index) {
     if (index < 0) return '';
     if (index < 4) return 'rarity-common';     // 4 addons
@@ -896,7 +991,8 @@ function setRole(role) {
 
     const charSelect = document.getElementById('character');
     charSelect.innerHTML = '<option value="None">None</option>';
-    const characters = perksData[role === 'killer' ? 'killers' : 'survivors'] || [];
+    const unlockedChars = getUnlockedChars()[role === 'killer' ? 'killers' : 'survivors'];
+    const characters = (perksData[role === 'killer' ? 'killers' : 'survivors'] || []).filter(c => unlockedChars.includes(c));
     characters.forEach(char => {
         let opt = document.createElement('option');
         opt.value = char;
@@ -936,11 +1032,16 @@ function setRole(role) {
     // Mise à jour de la datalist des perks selon le rôle
     const datalist = document.getElementById('perks-options');
     datalist.innerHTML = '<option value="None">None</option>';
+    const unlockedData = getUnlockedChars();
+    const roleKey = role === 'killer' ? 'killers' : 'survivors';
+
     if (perksData && perksData[role]) {
         perksData[role].forEach(perkObj => {
-            let opt = document.createElement('option');
-            opt.value = perkObj.name;
-            datalist.appendChild(opt);
+            if (perkObj.owner === "Base Kit" || (unlockedData[roleKey] && unlockedData[roleKey].includes(perkObj.owner))) {
+                let opt = document.createElement('option');
+                opt.value = perkObj.name;
+                datalist.appendChild(opt);
+            }
         });
     }
     // Reset perk icons
@@ -1040,10 +1141,8 @@ function showView(viewId) {
     const mainNav = document.getElementById('main-nav');
     if (mainNav) {
         mainNav.style.display = (viewId === 'landing') ? 'none' : 'flex';
-        // On masque les boutons spécifiques aux statistiques si on est dans un autre mode
-        const isStatsView = ['stats', 'history'].includes(viewId);
-        const statsBtns = mainNav.querySelectorAll('button:not(:first-child)');
-        statsBtns.forEach(btn => btn.style.display = isStatsView ? 'inline-block' : 'none');
+        // On laisse les boutons de navigation visibles dans tous les modes
+        mainNav.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-block');
     }
 
     if (viewId === 'tracker') {
@@ -1057,6 +1156,8 @@ function showView(viewId) {
     } else if (viewId === 'hardcore') {
         resetHardcoreUI();
         renderHardcoreUI();
+    } else if (viewId === 'unlocked-chars') {
+        renderUnlockedChars();
     } else if (viewId === 'icons-index') {
         renderIconsIndex();
     }
@@ -2012,16 +2113,19 @@ function validateGauntletBuild(character, perks, completedCount) {
 function renderGauntletUI() {
     const state = getGauntletState();
     const count = state.completed.length;
+    const unlockedSurvivors = getUnlockedChars().survivors;
+    const total = Math.max(1, unlockedSurvivors.length);
     const tier = getGauntletTierInfo(count);
     
     document.getElementById('gauntlet-tier-name').innerText = `Tier ${Math.min(5, Math.floor(count / 10) + 1)}: ${tier.name}`;
     document.getElementById('gauntlet-perk-restriction').innerText = `Restriction : ${tier.perks}`;
-    document.getElementById('gauntlet-progress-fill').style.width = (count / 52 * 100) + '%';
-    document.getElementById('gauntlet-count').innerText = `${count} / 52 Survivants`;
-    
+    document.getElementById('gauntlet-progress-fill').style.width = (count / total * 100) + '%';
+    document.getElementById('gauntlet-count').innerText = `${count} / ${total} Survivants`;
+
     const rollZone = document.getElementById('gauntlet-rolled-char');
     
-    if (state.current) {
+    // On vérifie si le perso actuel est toujours dans la liste des débloqués
+    if (state.current && unlockedSurvivors.includes(state.current)) {
         rollZone.style.display = 'block';
         document.getElementById('gauntlet-rolled-name').innerText = state.current;
         document.getElementById('gauntlet-instr-name').innerText = state.current;
@@ -2073,7 +2177,7 @@ function renderGauntletUI() {
                 perksContainer.appendChild(perkWrapper);
             });
         }
-    } else if (state.completed.length < 52) {
+    } else if (state.completed.length < total) {
         // Si aucun perso n'est en cours et que le défi n'est pas fini, on roll automatiquement
         rollGauntletSurvivor();
     } else {
@@ -2097,12 +2201,13 @@ function rollGauntletSurvivor() {
     const state = getGauntletState();
     if (state.current) return;
 
-    const all = perksData.survivors;
+    const unlocked = getUnlockedChars().survivors;
+    const all = perksData.survivors.filter(s => unlocked.includes(s));
 
     // Si la file d'attente est vide, on génère un nouvel ordre aléatoire complet
     if (!state.order || state.order.length === 0) {
         const remaining = all.filter(s => !state.completed.includes(s));
-        if (remaining.length === 0) return alert("Félicitations ! Vous avez terminé le Gauntlet !");
+        if (remaining.length === 0) return; // Plus rien à tirer
 
         // Mélange de Fisher-Yates pour garantir un aléatoire de qualité
         for (let i = remaining.length - 1; i > 0; i--) {
@@ -2121,11 +2226,12 @@ function rollGauntletSurvivor() {
 function recordGauntletResult(win) {
     const state = getGauntletState();
     if (!state.current) return;
+    const unlockedCount = getUnlockedChars().survivors.length;
     
     if (win) {
         state.completed.push(state.current);
         state.current = null;
-        if (state.completed.length === 52) alert("GAUNTLET TERMINÉ ! Vous êtes une légende.");
+        if (state.completed.length >= unlockedCount) alert("GAUNTLET TERMINÉ ! Vous êtes une légende.");
     } else {
         const tier = getGauntletTierInfo(state.completed.length);
         state.completed = state.completed.slice(0, tier.checkpoint);
@@ -2137,9 +2243,16 @@ function recordGauntletResult(win) {
     localStorage.setItem('dbd_gauntlet_state', JSON.stringify(state));
     
     // On enchaîne directement sur le tirage du prochain survivant
-    if (state.completed.length < 52) {
+    if (state.completed.length < unlockedCount) {
         rollGauntletSurvivor();
     } else {
+        renderGauntletUI();
+    }
+}
+
+function resetGauntletMode() {
+    if (confirm("Voulez-vous réinitialiser complètement le Gauntlet ? Toute votre progression sera perdue.")) {
+        localStorage.removeItem('dbd_gauntlet_state');
         renderGauntletUI();
     }
 }

@@ -20,6 +20,7 @@
       <button onclick="showView('landing')">Menu Principal</button>
       <button onclick="showView('stats')">Statistiques</button>
       <button onclick="showView('history')">Historique</button>
+      <button onclick="showView('unlocked-chars')">Personnages</button>
     </nav>
 
     <!-- Page d'accueil / Sélection de mode -->
@@ -30,6 +31,7 @@
         <button onclick="showView('hardcore')">Hardcore</button>
         <button onclick="showView('gauntlet')">Gauntlet</button>
         <button onclick="showView('stats')">Statistiques & Historique</button>
+        <button onclick="showView('unlocked-chars')" style="margin-top: 20px;">Gérer mes Personnages</button>
         <button onclick="showView('icons-index')" style="margin-top: 20px; border-style: dashed; opacity: 0.7;">Index des Icônes</button>
       </div>
     </div>
@@ -37,7 +39,10 @@
     <!-- Placeholders pour les nouveaux modes -->
     <div id="hardcore-view" class="view" style="display:none;">
       <div class="stats-zone" style="text-align: center; position: relative;">
-        <div style="position: absolute; top: 10px; right: 20px;" id="hardcore-season-info"></div>
+        <div style="position: absolute; top: 10px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+          <div id="hardcore-season-info" style="font-size: 0.8em; color: #888;"></div>
+          <button onclick="resetHardcoreMode()" class="btn-secondary" style="font-size: 0.6em; padding: 4px 8px;">Réinitialiser Mode</button>
+        </div>
         <h2>Mode Hardcore - Saison</h2>
         <div id="rank-container" style="display: flex; justify-content: space-around; gap: 20px; margin-bottom: 30px;">
            <div class="stats-zone" style="flex: 1; margin-bottom: 0; background: rgba(0,0,0,0.3);">
@@ -127,7 +132,8 @@
       </div>
     </div>
     <div id="gauntlet-view" class="view" style="display:none;">
-      <div class="stats-zone" style="text-align: center; max-width: 800px; margin: 0 auto;">
+      <div class="stats-zone" style="text-align: center; max-width: 800px; margin: 0 auto; position: relative;">
+        <button onclick="resetGauntletMode()" class="btn-secondary" style="position: absolute; top: 15px; right: 20px; font-size: 0.6em; padding: 4px 8px;">Réinitialiser</button>
         <h2>Survivor Gauntlet</h2>
         
         <div id="gauntlet-progress-container">
@@ -136,7 +142,7 @@
            <div class="rank-progress-bar" style="width: 100%; margin: 20px 0;">
               <div id="gauntlet-progress-fill" style="width: 0%; background-color: #a91d1d; height: 100%;"></div>
            </div>
-           <div id="gauntlet-count" style="font-weight: bold; font-size: 1.2em;">0 / 52 Survivants</div>
+           <div id="gauntlet-count" style="font-weight: bold; font-size: 1.2em;">0 / 0 Survivants</div>
         </div>
 
         <div id="gauntlet-roll-zone" style="margin-top: 30px; padding: 30px; border: 2px dashed #333; border-radius: 8px; background: rgba(0,0,0,0.2);">
@@ -160,6 +166,19 @@
             <h3>Progression de la Collection</h3>
             <div id="gauntlet-completed-list" class="hc-grid" style="min-height: 120px;"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Gestion des Personnages Débloqués -->
+    <div id="unlocked-chars-view" class="view" style="display:none;">
+      <div class="stats-zone">
+        <h2>Personnages Débloqués</h2>
+        <p style="color: #888; margin-bottom: 20px;">Sélectionnez les personnages que vous possédez. Cela impactera les choix disponibles et le Survivor Gauntlet.</p>
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+          <button onclick="unlockAllChars()">Tout débloquer</button>
+          <button onclick="resetCharsToDefault()" class="btn-secondary">Réinitialiser (Base)</button>
+        </div>
+        <div id="unlocked-chars-content"></div>
       </div>
     </div>
 
