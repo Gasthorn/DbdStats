@@ -2075,19 +2075,22 @@ function getGauntletState() {
     return state;
 }
 
-function getGauntletTierInfo(count) {
+function getGauntletTierInfo(count, total) {
     // count est le nombre de survivants déjà réussis
-    if (count < 10) return { name: "The Warm Up", perks: "4 Perks (1 Unique)", checkpoint: 0 };
-    if (count < 20) return { name: "The Thinning", perks: "3 Perks (1 Unique)", checkpoint: 10 };
-    if (count < 30) return { name: "The Struggle", perks: "2 Perks (1 Unique)", checkpoint: 20 };
-    if (count < 40) return { name: "The Hardcore", perks: "1 Perk (Character Unique)", checkpoint: 30 };
-    return { name: "The Legend", perks: "No Perks Allowed", checkpoint: 40 };
+    const segment = total / 5;
+    if (count < segment) return { tier: 1, name: "The Warm Up", perks: "4 Perks (1 Unique)", checkpoint: 0 };
+    if (count < segment * 2) return { tier: 2, name: "The Thinning", perks: "3 Perks (1 Unique)", checkpoint: Math.floor(segment) };
+    if (count < segment * 3) return { tier: 3, name: "The Struggle", perks: "2 Perks (1 Unique)", checkpoint: Math.floor(segment * 2) };
+    if (count < segment * 4) return { tier: 4, name: "The Hardcore", perks: "1 Perk (Character Unique)", checkpoint: Math.floor(segment * 3) };
+    return { tier: 5, name: "The Legend", perks: "No Perks Allowed", checkpoint: Math.floor(segment * 4) };
 }
 
 /**
  * Vérifie si le build respecte les restrictions du Tier actuel du Gauntlet.
  */
 function validateGauntletBuild(character, perks, completedCount) {
+    const unlockedCount = getUnlockedChars().survivors.length;
+    const tierInfo = getGauntletTierInfo(completedCount, unlockedCount);
     const activePerks = perks.filter(p => p && p !== 'None');
     
     // On identifie les perks uniques du survivant joué
@@ -2097,13 +2100,13 @@ function validateGauntletBuild(character, perks, completedCount) {
 
     const hasUnique = activePerks.some(p => uniquePerks.includes(p));
 
-    if (completedCount < 10) { // Tier 1: 4 Perks (1 Unique)
+    if (tierInfo.tier === 1) { // Tier 1: 4 Perks (1 Unique)
         return activePerks.length <= 4 && hasUnique;
-    } else if (completedCount < 20) { // Tier 2: 3 Perks (1 Unique)
+    } else if (tierInfo.tier === 2) { // Tier 2: 3 Perks (1 Unique)
         return activePerks.length <= 3 && hasUnique;
-    } else if (completedCount < 30) { // Tier 3: 2 Perks (1 Unique)
+    } else if (tierInfo.tier === 3) { // Tier 3: 2 Perks (1 Unique)
         return activePerks.length <= 2 && hasUnique;
-    } else if (completedCount < 40) { // Tier 4: 1 Unique (Seulement sa perk unique)
+    } else if (tierInfo.tier === 4) { // Tier 4: 1 Unique (Seulement sa perk unique)
         return activePerks.length === 1 && hasUnique;
     } else { // Tier 5: No Perks
         return activePerks.length === 0;
@@ -2115,9 +2118,9 @@ function renderGauntletUI() {
     const count = state.completed.length;
     const unlockedSurvivors = getUnlockedChars().survivors;
     const total = Math.max(1, unlockedSurvivors.length);
-    const tier = getGauntletTierInfo(count);
+    const tier = getGauntletTierInfo(count, total);
     
-    document.getElementById('gauntlet-tier-name').innerText = `Tier ${Math.min(5, Math.floor(count / 10) + 1)}: ${tier.name}`;
+    document.getElementById('gauntlet-tier-name').innerText = `Tier ${tier.tier}: ${tier.name}`;
     document.getElementById('gauntlet-perk-restriction').innerText = `Restriction : ${tier.perks}`;
     document.getElementById('gauntlet-progress-fill').style.width = (count / total * 100) + '%';
     document.getElementById('gauntlet-count').innerText = `${count} / ${total} Survivants`;
@@ -2233,7 +2236,7 @@ function recordGauntletResult(win) {
         state.current = null;
         if (state.completed.length >= unlockedCount) alert("GAUNTLET TERMINÉ ! Vous êtes une légende.");
     } else {
-        const tier = getGauntletTierInfo(state.completed.length);
+        const tier = getGauntletTierInfo(state.completed.length, unlockedCount);
         state.completed = state.completed.slice(0, tier.checkpoint);
         state.current = null;
         state.order = []; // Réinitialise l'ordre pour qu'il soit régénéré au prochain roll
