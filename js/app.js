@@ -1107,6 +1107,7 @@ function resetUI() {
     document.getElementById('kills').value = '';
     document.getElementById('killer-gens').value = 0;
     document.getElementById('killer-gens').nextElementSibling.value = 0;
+    document.getElementById('ignore-gauntlet').checked = false;
     
     const saveBtn = document.getElementById('save-button');
     if (saveBtn) {
@@ -1618,6 +1619,7 @@ function lineLineData(data) {
 
 function saveMatch() {
     const perks = Array.from(document.querySelectorAll('#match-form .perk-input')).map(input => input.value || 'None');
+    const ignoreGauntlet = document.getElementById('ignore-gauntlet').checked;
     
     const match = {
         date: new Date().toLocaleString(),
@@ -1631,7 +1633,8 @@ function saveMatch() {
         bloodpoints: document.getElementById('bloodpoints').value,
         kills: currentRole === 'killer' ? document.getElementById('kills').value : null,
         escaped: currentRole === 'survivor' ? (document.getElementById('escaped').value || 'Mort') : null,
-        gens: currentRole === 'killer' ? document.getElementById('killer-gens').value : document.getElementById('gens-done').value
+        gens: currentRole === 'killer' ? document.getElementById('killer-gens').value : document.getElementById('gens-done').value,
+        ignoreGauntlet: ignoreGauntlet
     };
 
     let history = JSON.parse(localStorage.getItem('dbd_stats')) || [];
@@ -1649,7 +1652,7 @@ function saveMatch() {
     localStorage.setItem('dbd_stats', JSON.stringify(history));
 
     // Intégration Gauntlet : si c'est une nouvelle partie et que le perso correspond au tirage actif du Gauntlet
-    if (isNewMatch) {
+    if (isNewMatch && !ignoreGauntlet) {
         const gauntletState = getGauntletState();
         const activeRole = gauntletState.activeRole;
         
@@ -1910,6 +1913,7 @@ function editMatch(index) {
         showView('tracker');
         editingMatchIndex = index;
         setRole(match.role);
+        document.getElementById('ignore-gauntlet').checked = !!match.ignoreGauntlet;
 
     document.getElementById('character').value = match.character;
     updateImg(document.getElementById('char-icon'), 'Characters', match.character);
