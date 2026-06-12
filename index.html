@@ -44,6 +44,16 @@
           <button onclick="resetHardcoreMode()" class="btn-secondary" style="font-size: 0.6em; padding: 4px 8px;">Réinitialiser Mode</button>
         </div>
         <h2>Mode Hardcore - Saison</h2>
+
+        <div class="rules-summary">
+          <h3 class="rules-title">📜 Règles Hardcore</h3>
+          <ul class="rules-list">
+            <li><strong>Progression :</strong> Gagnez des Pips pour monter de grade (Cendre à Iridescent).</li>
+            <li><strong>Mort Permanente :</strong> Si un personnage meurt (ou évasion totale vs Tueur), il est éliminé pour la saison.</li>
+            <li><strong>Restrictions :</strong> Les compétences des personnages éliminés sont bloquées pour le reste de l'équipe.</li>
+          </ul>
+        </div>
+
         <div id="rank-container" style="display: flex; justify-content: space-around; gap: 20px; margin-bottom: 30px;">
            <div class="stats-zone" style="flex: 1; margin-bottom: 0; background: rgba(0,0,0,0.3);">
               <h3 style="margin-top: 0; font-size: 0.9em; border: none;">Rang Tueur</h3>
@@ -134,9 +144,25 @@
     <div id="gauntlet-view" class="view" style="display:none;">
       <div class="stats-zone" style="text-align: center; max-width: 800px; margin: 0 auto; position: relative;">
         <button onclick="resetGauntletMode()" class="btn-secondary" style="position: absolute; top: 15px; right: 20px; font-size: 0.6em; padding: 4px 8px;">Réinitialiser</button>
-        <h2>Survivor Gauntlet</h2>
+        <button onclick="refreshGauntletQueue()" class="btn-secondary" style="position: absolute; top: 15px; right: 110px; font-size: 0.6em; padding: 4px 8px;">Actualiser Liste</button>
+        <h2 id="gauntlet-title">Survivor Gauntlet</h2>
+
+        <div class="rules-summary">
+          <h3 class="rules-title">📜 Règles Gauntlet</h3>
+          <ul class="rules-list">
+            <li><strong>Objectif :</strong> Réussir une partie avec chaque personnage de votre collection.</li>
+            <li><strong>Difficulté :</strong> 5 Tiers de restriction (de 4 perks à "No Perks").</li>
+            <li><strong>Échec :</strong> En cas de défaite, vous retournez au checkpoint du Tier actuel.</li>
+            <li><strong>Validation :</strong> Évasion (Survivant) ou 3+ Sacrifices (Tueur).</li>
+          </ul>
+        </div>
+
+        <div id="gauntlet-role-selection" style="margin-bottom: 20px;">
+          <button onclick="setGauntletRole('killer')">Tueur</button>
+          <button onclick="setGauntletRole('survivor')">Survivant</button>
+        </div>
         
-        <div id="gauntlet-progress-container">
+        <div id="gauntlet-progress-container" style="display: none;">
            <h3 id="gauntlet-tier-name" style="border:none; margin-bottom: 5px;">Tier 1: The Warm Up</h3>
            <div id="gauntlet-perk-restriction" style="color: #f1c40f; font-weight: bold; font-size: 1.1em; margin-bottom: 10px;">Restriction : 4 Perks (1 Unique)</div>
            <div class="rank-progress-bar" style="width: 100%; margin: 20px 0;">
@@ -145,7 +171,7 @@
            <div id="gauntlet-count" style="font-weight: bold; font-size: 1.2em;">0 / 0 Survivants</div>
         </div>
 
-        <div id="gauntlet-roll-zone" style="margin-top: 30px; padding: 30px; border: 2px dashed #333; border-radius: 8px; background: rgba(0,0,0,0.2);">
+        <div id="gauntlet-roll-zone" style="margin-top: 30px; padding: 30px; border: 2px dashed #333; border-radius: 8px; background: rgba(0,0,0,0.2); display: none;">
             <div id="gauntlet-rolled-char" style="display:none;">
                 <div class="selection-slot character-slot" style="margin: 0 auto 15px; border-color: #a91d1d;">
                     <img id="gauntlet-rolled-icon" src="" alt="">
@@ -154,15 +180,16 @@
                 <div id="gauntlet-rolled-perks" class="build-icons" style="margin-top: 15px;"></div>
                 
                 <div style="margin-top: 30px; padding: 20px; border: 1px solid #a91d1d; border-radius: 4px; background: rgba(169, 29, 29, 0.1); color: #eee; font-size: 0.95em; line-height: 1.5;">
-                    <p style="margin: 0 0 10px; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 1px;">🎮 Comment valider ce survivant ?</p>
+                    <p style="margin: 0 0 10px; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 1px;">🎮 Comment valider ce <span id="gauntlet-instr-role">survivant</span> ?</p>
                     <p style="margin: 5px 0;">1. Allez dans le mode <strong>"Nouvelle Partie"</strong>.</p>
                     <p style="margin: 5px 0;">2. Jouez <strong id="gauntlet-instr-name">---</strong> avec les restrictions de perks indiquées ci-dessus.</p>
                     <p style="margin: 5px 0;">3. Enregistrez le match : le Gauntlet se mettra à jour automatiquement !</p>
+                    <p id="gauntlet-instr-win-cond" style="margin: 5px 0; font-weight: bold; color: #ff4d4d;"></p>
                 </div>
             </div>
         </div>
-        
-        <div style="margin-top: 40px;">
+
+        <div id="gauntlet-completed-section" style="margin-top: 40px; display: none;">
             <h3>Progression de la Collection</h3>
             <div id="gauntlet-completed-list" class="hc-grid" style="min-height: 120px;"></div>
         </div>

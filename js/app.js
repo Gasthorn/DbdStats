@@ -1141,8 +1141,14 @@ function showView(viewId) {
     const mainNav = document.getElementById('main-nav');
     if (mainNav) {
         mainNav.style.display = (viewId === 'landing') ? 'none' : 'flex';
-        // On laisse les boutons de navigation visibles dans tous les modes
-        mainNav.querySelectorAll('button').forEach(btn => btn.style.display = 'inline-block');
+        // Masquer le bouton de navigation correspondant à la page actuelle pour éviter la redondance
+        mainNav.querySelectorAll('button').forEach(btn => {
+            if (btn.getAttribute('onclick').includes(`'${viewId}'`)) {
+                btn.style.display = 'none';
+            } else {
+                btn.style.display = 'inline-block';
+            }
+        });
     }
 
     if (viewId === 'tracker') {
@@ -1642,22 +1648,30 @@ function saveMatch() {
     
     localStorage.setItem('dbd_stats', JSON.stringify(history));
 
-    // Intégration Gauntlet : si c'est une nouvelle partie et que le perso correspond à celui du Gauntlet
-    if (isNewMatch && currentRole === 'survivor') {
+    // Intégration Gauntlet : si c'est une nouvelle partie et que le perso correspond au tirage actif du Gauntlet
+    if (isNewMatch) {
         const gauntletState = getGauntletState();
-        if (gauntletState.current && gauntletState.current === match.character) {
-            if (validateGauntletBuild(match.character, match.perks, gauntletState.completed.length)) {
-                const isWin = (match.escaped === 'Trappe' || match.escaped === 'Porte' || match.escaped === true);
-                recordGauntletResult(isWin);
+        const activeRole = gauntletState.activeRole;
+        
+        if (activeRole === currentRole) {
+            const roleState = gauntletState[activeRole];
+            if (roleState.current && roleState.current === match.character) {
+                if (validateGauntletBuild(match.character, match.perks, roleState.completed.length, activeRole)) {
+                    let isWin = false;
+                    if (activeRole === 'survivor') {
+                        isWin = (match.escaped === 'Trappe' || match.escaped === 'Porte' || match.escaped === true);
+                    } else {
+                        isWin = parseInt(match.kills || 0) >= 3;
+                    }
+                    recordGauntletResult(isWin, activeRole);
+                }
             }
         }
     }
-
     alert('Partie enregistrée !');
     renderHistory();
     resetUI();
 }
-
 function renderHistory() {
     const historyList = document.getElementById('history-list');
     const history = JSON.parse(localStorage.getItem('dbd_stats')) || [];
@@ -2064,15 +2078,30 @@ function getGauntletState() {
     let state = JSON.parse(localStorage.getItem('dbd_gauntlet_state'));
     if (!state) {
         state = {
-            completed: [], // Liste des noms de survivants réussis
-            current: null, // Survivant actuellement tiré au sort
-            order: []      // File d'attente aléatoire des survivants
+            activeRole: null,
+            survivor: { completed: [], current: null, order: [] },
+            killer: { completed: [], current: null, order: [] }
         };
         localStorage.setItem('dbd_gauntlet_state', JSON.stringify(state));
     }
-    // Migration pour les sauvegardes existantes
-    if (state.order === undefined) state.order = [];
+    // Migration pour les anciennes sauvegardes (Survivor uniquement)
+    if (state.completed !== undefined) {
+        const old = { ...state };
+        state = {
+            activeRole: 'survivor',
+            survivor: { completed: old.completed || [], current: old.current || null, order: old.order || [] },
+            killer: { completed: [], current: null, order: [] }
+        };
+        localStorage.setItem('dbd_gauntlet_state', JSON.stringify(state));
+    }
     return state;
+}
+
+function setGauntletRole(role) {
+    const state = getGauntletState();
+    state.activeRole = role;
+    localStorage.setItem('dbd_gauntlet_state', JSON.stringify(state));
+    renderGauntletUI();
 }
 
 function getGauntletTierInfo(count, total) {
@@ -2088,13 +2117,15 @@ function getGauntletTierInfo(count, total) {
 /**
  * Vérifie si le build respecte les restrictions du Tier actuel du Gauntlet.
  */
-function validateGauntletBuild(character, perks, completedCount) {
-    const unlockedCount = getUnlockedChars().survivors.length;
+function validateGauntletBuild(character, perks, completedCount, role) {
+    const unlockedCount = getUnlockedChars()[role === 'killer' ? 'killers' : 'survivors'].length;
     const tierInfo = getGauntletTierInfo(completedCount, unlockedCount);
     const activePerks = perks.filter(p => p && p !== 'None');
     
-    // On identifie les perks uniques du survivant joué
-    const uniquePerks = (perksData.survivor || [])
+    const rolePerks = role === 'killer' ? perksData.killer : perksData.survivor;
+
+    // On identifie les perks uniques du personnage joué
+    const uniquePerks = (rolePerks || [])
         .filter(p => p.owner.toLowerCase().replace(/[^a-z0-9]/g, '') === character.toLowerCase().replace(/[^a-z0-9]/g, ''))
         .map(p => p.name);
 
@@ -2115,39 +2146,60 @@ function validateGauntletBuild(character, perks, completedCount) {
 
 function renderGauntletUI() {
     const state = getGauntletState();
-    const count = state.completed.length;
-    const unlockedSurvivors = getUnlockedChars().survivors;
-    const total = Math.max(1, unlockedSurvivors.length);
+    
+    // Gestion de la sélection de rôle
+    document.querySelectorAll('#gauntlet-role-selection button').forEach(btn => btn.classList.remove('active-role'));
+    if (state.activeRole) {
+        const btnIdx = state.activeRole === 'killer' ? 0 : 1;
+        document.querySelectorAll('#gauntlet-role-selection button')[btnIdx].classList.add('active-role');
+        document.getElementById('gauntlet-title').innerText = state.activeRole === 'killer' ? 'Killer Gauntlet' : 'Survivor Gauntlet';
+        document.getElementById('gauntlet-progress-container').style.display = 'block';
+        document.getElementById('gauntlet-roll-zone').style.display = 'block';
+        document.getElementById('gauntlet-completed-section').style.display = 'block';
+    } else {
+        document.getElementById('gauntlet-title').innerText = 'Gauntlet Challenge';
+        document.getElementById('gauntlet-progress-container').style.display = 'none';
+        document.getElementById('gauntlet-roll-zone').style.display = 'none';
+        document.getElementById('gauntlet-completed-section').style.display = 'none';
+        return;
+    }
+
+    const roleState = state[state.activeRole];
+    const count = roleState.completed.length;
+    const unlockedChars = getUnlockedChars()[state.activeRole === 'killer' ? 'killers' : 'survivors'];
+    const total = Math.max(1, unlockedChars.length);
     const tier = getGauntletTierInfo(count, total);
     
     document.getElementById('gauntlet-tier-name').innerText = `Tier ${tier.tier}: ${tier.name}`;
     document.getElementById('gauntlet-perk-restriction').innerText = `Restriction : ${tier.perks}`;
     document.getElementById('gauntlet-progress-fill').style.width = (count / total * 100) + '%';
-    document.getElementById('gauntlet-count').innerText = `${count} / ${total} Survivants`;
+    document.getElementById('gauntlet-count').innerText = `${count} / ${total} ${state.activeRole === 'killer' ? 'Tueurs' : 'Survivants'}`;
 
     const rollZone = document.getElementById('gauntlet-rolled-char');
     
-    // On vérifie si le perso actuel est toujours dans la liste des débloqués
-    if (state.current && unlockedSurvivors.includes(state.current)) {
+    if (roleState.current && unlockedChars.includes(roleState.current)) {
         rollZone.style.display = 'block';
-        document.getElementById('gauntlet-rolled-name').innerText = state.current;
-        document.getElementById('gauntlet-instr-name').innerText = state.current;
-        
+        document.getElementById('gauntlet-rolled-name').innerText = roleState.current;
+        document.getElementById('gauntlet-instr-name').innerText = roleState.current;
+        document.getElementById('gauntlet-instr-role').innerText = state.activeRole === 'killer' ? 'tueur' : 'survivant';
+        document.getElementById('gauntlet-instr-win-cond').innerText = state.activeRole === 'killer' ? 'Condition : Au moins 3 sacrifices.' : 'Condition : Évadez-vous de la partie.';
+
         const icon = document.getElementById('gauntlet-rolled-icon');
         // On retire et on remet la classe pour redéclencher l'animation à chaque changement
         icon.classList.remove('animate-roll');
         void icon.offsetWidth; // Force le reflow (recalcul du style)
         icon.classList.add('animate-roll');
 
-        updateImg(icon, 'Characters', state.current);
+        updateImg(icon, 'Characters', roleState.current);
 
         // Affichage des perks uniques du personnage
         const perksContainer = document.getElementById('gauntlet-rolled-perks');
         if (perksContainer) {
             perksContainer.innerHTML = '';
-            // On filtre les perks appartenant au survivant actuel
-            const charPerks = perksData.survivor.filter(p => 
-                p.owner.toLowerCase().replace(/[^a-z0-9]/g, '') === state.current.toLowerCase().replace(/[^a-z0-9]/g, '')
+            const rolePerks = state.activeRole === 'killer' ? perksData.killer : perksData.survivor;
+            // On filtre les perks appartenant au personnage actuel
+            const charPerks = rolePerks.filter(p => 
+                p.owner.toLowerCase().replace(/[^a-z0-9]/g, '') === roleState.current.toLowerCase().replace(/[^a-z0-9]/g, '')
             );
             charPerks.forEach(p => {
                 const perkWrapper = document.createElement('div');
@@ -2180,8 +2232,8 @@ function renderGauntletUI() {
                 perksContainer.appendChild(perkWrapper);
             });
         }
-    } else if (state.completed.length < total) {
-        // Si aucun perso n'est en cours et que le défi n'est pas fini, on roll automatiquement
+    } else if (roleState.completed.length < total) {
+        // Si aucun perso n'est en cours pour ce rôle et que le défi n'est pas fini, on roll
         rollGauntletSurvivor();
     } else {
         rollZone.style.display = 'none';
@@ -2189,7 +2241,7 @@ function renderGauntletUI() {
     
     const list = document.getElementById('gauntlet-completed-list');
     list.innerHTML = '';
-    state.completed.forEach(name => {
+    roleState.completed.forEach(name => {
         const item = document.createElement('div');
         item.className = 'hc-char-item';
         const img = document.createElement('img');
@@ -2202,14 +2254,17 @@ function renderGauntletUI() {
 
 function rollGauntletSurvivor() {
     const state = getGauntletState();
-    if (state.current) return;
+    if (!state.activeRole) return;
+    
+    const roleState = state[state.activeRole];
+    if (roleState.current) return;
 
-    const unlocked = getUnlockedChars().survivors;
-    const all = perksData.survivors.filter(s => unlocked.includes(s));
+    const unlocked = getUnlockedChars()[state.activeRole === 'killer' ? 'killers' : 'survivors'];
+    const all = perksData[state.activeRole === 'killer' ? 'killers' : 'survivors'].filter(s => unlocked.includes(s));
 
     // Si la file d'attente est vide, on génère un nouvel ordre aléatoire complet
-    if (!state.order || state.order.length === 0) {
-        const remaining = all.filter(s => !state.completed.includes(s));
+    if (!roleState.order || roleState.order.length === 0) {
+        const remaining = all.filter(s => !roleState.completed.includes(s));
         if (remaining.length === 0) return; // Plus rien à tirer
 
         // Mélange de Fisher-Yates pour garantir un aléatoire de qualité
@@ -2217,40 +2272,68 @@ function rollGauntletSurvivor() {
             const j = Math.floor(Math.random() * (i + 1));
             [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
         }
-        state.order = remaining;
+        roleState.order = remaining;
     }
 
-    // On retire et sélectionne le premier survivant de la file d'attente
-    state.current = state.order.shift();
+    // On retire et sélectionne le premier personnage de la file d'attente
+    roleState.current = roleState.order.shift();
     localStorage.setItem('dbd_gauntlet_state', JSON.stringify(state));
     renderGauntletUI();
 }
 
-function recordGauntletResult(win) {
+function recordGauntletResult(win, role) {
     const state = getGauntletState();
-    if (!state.current) return;
-    const unlockedCount = getUnlockedChars().survivors.length;
+    const roleState = state[role];
+    if (!roleState.current) return;
+
+    const unlockedCount = getUnlockedChars()[role === 'killer' ? 'killers' : 'survivors'].length;
     
     if (win) {
-        state.completed.push(state.current);
-        state.current = null;
-        if (state.completed.length >= unlockedCount) alert("GAUNTLET TERMINÉ ! Vous êtes une légende.");
+        roleState.completed.push(roleState.current);
+        roleState.current = null;
+        if (roleState.completed.length >= unlockedCount) alert(`GAUNTLET ${role.toUpperCase()} TERMINÉ ! Vous êtes une légende.`);
     } else {
-        const tier = getGauntletTierInfo(state.completed.length, unlockedCount);
-        state.completed = state.completed.slice(0, tier.checkpoint);
-        state.current = null;
-        state.order = []; // Réinitialise l'ordre pour qu'il soit régénéré au prochain roll
-        alert(`Mort ! Progression du tier perdue. Retour au checkpoint : ${tier.checkpoint} survivants.`);
+        const tier = getGauntletTierInfo(roleState.completed.length, unlockedCount);
+        roleState.completed = roleState.completed.slice(0, tier.checkpoint);
+        roleState.current = null;
+        roleState.order = []; // Réinitialise l'ordre
+        const msg = role === 'killer' ? "Défaite ! Pas assez de sacrifices." : "Mort ! Évasion échouée.";
+        alert(`${msg} Progression du tier perdue. Retour au checkpoint : ${tier.checkpoint} personnages.`);
     }
     
     localStorage.setItem('dbd_gauntlet_state', JSON.stringify(state));
     
     // On enchaîne directement sur le tirage du prochain survivant
-    if (state.completed.length < unlockedCount) {
+    if (roleState.completed.length < unlockedCount) {
         rollGauntletSurvivor();
     } else {
         renderGauntletUI();
     }
+}
+
+/**
+ * Actualise la file d'attente du Gauntlet en fonction des personnages débloqués.
+ * Utile si l'utilisateur a modifié ses personnages possédés dans les réglages sans vouloir perdre sa progression.
+ */
+function refreshGauntletQueue() {
+    const state = getGauntletState();
+    const role = state.activeRole;
+    if (!role) return;
+
+    const roleState = state[role];
+    const unlockedChars = getUnlockedChars()[role === 'killer' ? 'killers' : 'survivors'];
+
+    // Si le personnage actuel n'est plus dans la liste des débloqués, on l'annule
+    if (roleState.current && !unlockedChars.includes(roleState.current)) {
+        roleState.current = null;
+    }
+
+    // On vide l'ordre pour forcer une régénération complète basée sur les débloqués actuels au prochain rendu
+    roleState.order = [];
+
+    localStorage.setItem('dbd_gauntlet_state', JSON.stringify(state));
+    renderGauntletUI();
+    alert("La liste du Gauntlet a été actualisée en fonction de vos personnages débloqués !");
 }
 
 function resetGauntletMode() {
