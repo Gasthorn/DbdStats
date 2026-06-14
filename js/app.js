@@ -2001,7 +2001,9 @@ window.onload = async () => {
     };
 
     // Application du comportement aux équipements et add-ons
-    ['surv-item', 'surv-addon-1', 'surv-addon-2', 'kill-addon-1', 'kill-addon-2', 'hc-surv-item', 'hc-surv-addon-1', 'hc-surv-addon-2', 'hc-kill-addon-1', 'hc-kill-addon-2'].forEach(setupDatalistFocusBehavior);
+    ['surv-item', 'surv-addon-1', 'surv-addon-2', 'kill-addon-1', 'kill-addon-2', 
+     'hc-surv-item', 'hc-surv-addon-1', 'hc-surv-addon-2', 'hc-kill-addon-1', 'hc-kill-addon-2',
+     'gauntlet-surv-item', 'gauntlet-surv-addon-1', 'gauntlet-surv-addon-2', 'gauntlet-kill-addon-1', 'gauntlet-kill-addon-2'].forEach(setupDatalistFocusBehavior);
 
     document.getElementById('hc-surv-item').addEventListener('input', (e) => {
         updateHCSurvivorAddons();
@@ -2018,6 +2020,26 @@ window.onload = async () => {
     document.getElementById('hc-kill-addon-2').addEventListener('input', (e) => {
         const char = document.getElementById('hc-character').value;
         updateImg(document.getElementById('hc-kill-addon-2-icon'), 'Addons', e.target.value, char);
+    });
+
+    document.getElementById('gauntlet-surv-item').addEventListener('input', (e) => {
+        updateGauntletSurvivorAddons();
+        updateImg(document.getElementById('gauntlet-surv-item-icon'), 'Items', e.target.value);
+        if (equipmentData.survivorItems.includes(e.target.value) || e.target.value === "None") e.target.blur();
+    });
+    document.getElementById('gauntlet-surv-addon-1').addEventListener('input', (e) => updateImg(document.getElementById('gauntlet-surv-addon-1-icon'), 'Addons', e.target.value));
+    document.getElementById('gauntlet-surv-addon-2').addEventListener('input', (e) => updateImg(document.getElementById('gauntlet-surv-addon-2-icon'), 'Addons', e.target.value));
+    
+    document.getElementById('gauntlet-kill-addon-1').addEventListener('input', (e) => {
+        updateGauntletKillerAddons();
+    });
+    document.getElementById('gauntlet-kill-addon-2').addEventListener('input', (e) => {
+        updateGauntletKillerAddons();
+    });
+
+    document.getElementById('gauntlet-opponent-killer').addEventListener('change', (e) => {
+        updateImg(document.getElementById('gauntlet-opponent-icon'), 'Characters', e.target.value);
+        e.target.blur();
     });
 
     document.getElementById('surv-item').addEventListener('input', (e) => {
@@ -2055,8 +2077,9 @@ window.onload = async () => {
         if ((list && list.includes(e.target.value)) || e.target.value === "None") e.target.blur();
     });
 
-    document.querySelectorAll('#match-form .perk-input, #hc-match-form .hc-perk-input').forEach((input) => {
+    document.querySelectorAll('#match-form .perk-input, #hc-match-form .hc-perk-input, .gauntlet-perk-input').forEach((input) => {
         const isHC = input.classList.contains('hc-perk-input');
+        const isGauntlet = input.classList.contains('gauntlet-perk-input');
         let tempValue = '';
         input.addEventListener('focus', (e) => {
             tempValue = e.target.value;
@@ -2066,12 +2089,23 @@ window.onload = async () => {
             if (e.target.value === '') e.target.value = tempValue;
         });
         input.addEventListener('input', (e) => {
-            const container = isHC ? document.getElementById('hc-match-form') : document.getElementById('match-form');
-            const allInputs = Array.from(container.querySelectorAll(isHC ? '.hc-perk-input' : '.perk-input'));
+            let container;
+            if (isHC) container = document.getElementById('hc-match-form');
+            else if (isGauntlet) container = document.getElementById('gauntlet-quick-form');
+            else container = document.getElementById('match-form');
+
+            const allInputs = Array.from(container.querySelectorAll(isHC ? '.hc-perk-input' : (isGauntlet ? '.gauntlet-perk-input' : '.perk-input')));
             const idx = allInputs.indexOf(e.target);
-            const icon = container.querySelectorAll(isHC ? '.hc-perk-icon' : '.perk-icon')[idx];
+            const icon = container.querySelectorAll(isHC ? '.hc-perk-icon' : (isGauntlet ? '.perk-icon' : '.perk-icon'))[idx];
+
             updateImg(icon, 'Perks', e.target.value);
-            const list = isHC ? getAvailableHardcorePerks(currentRole, document.getElementById('hc-character').value) : perksData[currentRole];
+
+            let roleForList = currentRole;
+            if (isGauntlet) {
+                roleForList = getGauntletState().activeRole;
+            }
+
+            const list = isHC ? getAvailableHardcorePerks(currentRole, document.getElementById('hc-character').value) : perksData[roleForList];
             if (list && (list.some(p => (p.name || p) === e.target.value) || e.target.value === "None")) e.target.blur();
         });
     });
@@ -2180,6 +2214,7 @@ function renderGauntletUI() {
     document.getElementById('gauntlet-count').innerText = `${count} / ${total} ${state.activeRole === 'killer' ? 'Tueurs' : 'Survivants'}`;
 
     const rollZone = document.getElementById('gauntlet-rolled-char');
+    const quickForm = document.getElementById('gauntlet-quick-form');
     
     if (roleState.current && unlockedChars.includes(roleState.current)) {
         rollZone.style.display = 'block';
@@ -2195,6 +2230,82 @@ function renderGauntletUI() {
         icon.classList.add('animate-roll');
 
         updateImg(icon, 'Characters', roleState.current);
+
+        // Setup Quick Form for the current character
+        const isAlreadyVisible = quickForm.style.display === 'block';
+        const isCurrentCharSet = quickForm.dataset.currentChar === roleState.current;
+
+        if (!isAlreadyVisible || !isCurrentCharSet) {
+            quickForm.style.display = 'block';
+            quickForm.dataset.currentChar = roleState.current;
+
+            // Prepare unique perks for the specific character
+            const rolePerks = state.activeRole === 'killer' ? perksData.killer : perksData.survivor;
+            const charPerks = rolePerks.filter(p => 
+                p.owner.toLowerCase().replace(/[^a-z0-9]/g, '') === roleState.current.toLowerCase().replace(/[^a-z0-9]/g, '')
+            );
+
+            const uniqueDatalist = document.getElementById('gauntlet-unique-perks-options');
+            if (uniqueDatalist) {
+                uniqueDatalist.innerHTML = '';
+                charPerks.forEach(p => {
+                    let opt = document.createElement('option');
+                    opt.value = p.name;
+                    uniqueDatalist.appendChild(opt);
+                });
+            }
+
+            // Initialisation des listes de suggestions globales pour le Gauntlet
+            const standardPerkDatalist = document.getElementById('perks-options');
+            if (standardPerkDatalist) {
+                standardPerkDatalist.innerHTML = '<option value="None">None</option>';
+                const unlockedData = getUnlockedChars();
+                const roleKey = state.activeRole === 'killer' ? 'killers' : 'survivors';
+                perksData[state.activeRole].forEach(p => {
+                    if (p.owner === "Base Kit" || (unlockedData[roleKey] && unlockedData[roleKey].includes(p.owner))) {
+                        let opt = document.createElement('option'); opt.value = p.name;
+                        standardPerkDatalist.appendChild(opt);
+                    }
+                });
+            }
+            updateDatalist('items-options', equipmentData.survivorItems);
+
+            // Init form values
+            document.getElementById('gauntlet-killer-outcome').style.display = state.activeRole === 'killer' ? 'flex' : 'none';
+            document.getElementById('gauntlet-survivor-outcome').style.display = state.activeRole === 'survivor' ? 'block' : 'none';
+            document.getElementById('gauntlet-bp').value = '';
+
+            if (state.activeRole === 'survivor') {
+                const opponentSelect = document.getElementById('gauntlet-opponent-killer');
+                opponentSelect.innerHTML = '<option value="None">None</option>';
+                perksData.killers.forEach(k => {
+                    let opt = document.createElement('option'); opt.value = k; opt.innerHTML = k;
+                    opponentSelect.appendChild(opt);
+                });
+                updateImg(document.getElementById('gauntlet-opponent-icon'), 'Characters', opponentSelect.value);
+                document.getElementById('gauntlet-gens-done').value = 0;
+                document.getElementById('gauntlet-gens-done').nextElementSibling.value = 0;
+                document.getElementById('gauntlet-escaped').value = 'Mort';
+                ['gauntlet-surv-item', 'gauntlet-surv-addon-1', 'gauntlet-surv-addon-2'].forEach(id => document.getElementById(id).value = 'None');
+                ['gauntlet-surv-item-icon', 'gauntlet-surv-addon-1-icon', 'gauntlet-surv-addon-2-icon'].forEach(id => updateImg(document.getElementById(id), id.includes('addon') ? 'Addons' : 'Items', 'None'));
+            } else {
+                document.getElementById('gauntlet-kills').value = 0;
+                document.getElementById('gauntlet-killer-gens').value = 0;
+                document.getElementById('gauntlet-killer-gens').nextElementSibling.value = 0;
+                ['gauntlet-kill-addon-1', 'gauntlet-kill-addon-2'].forEach(id => document.getElementById(id).value = 'None');
+                ['gauntlet-kill-addon-1-icon', 'gauntlet-kill-addon-2-icon'].forEach(id => updateImg(document.getElementById(id), 'Addons', 'None'));
+                updateGauntletKillerAddons();
+            }
+            document.getElementById('gauntlet-survivor-equipment-fields').style.display = state.activeRole === 'survivor' ? 'flex' : 'none';
+            document.getElementById('gauntlet-killer-equipment-fields').style.display = state.activeRole === 'killer' ? 'flex' : 'none';
+            
+            const gauntletPerks = document.querySelectorAll('.gauntlet-perk-input');
+            const gauntletIcons = document.querySelectorAll('#gauntlet-quick-form .perk-icon');
+            gauntletPerks.forEach((input, i) => {
+                input.value = 'None';
+                updateImg(gauntletIcons[i], 'Perks', input.value);
+            });
+        }
 
         // Affichage des perks uniques du personnage
         const perksContainer = document.getElementById('gauntlet-rolled-perks');
@@ -2241,6 +2352,8 @@ function renderGauntletUI() {
         rollGauntletSurvivor();
     } else {
         rollZone.style.display = 'none';
+        quickForm.style.display = 'none';
+        quickForm.dataset.currentChar = '';
     }
     
     const list = document.getElementById('gauntlet-completed-list');
@@ -2313,6 +2426,82 @@ function recordGauntletResult(win, role) {
     } else {
         renderGauntletUI();
     }
+}
+
+/**
+ * Enregistre le match et valide l'étape du Gauntlet.
+ */
+function saveMatchFromGauntlet() {
+    const state = getGauntletState();
+    const role = state.activeRole;
+    const char = state[role].current;
+    
+    const bp = document.getElementById('gauntlet-bp').value;
+    if (!bp) return alert("Veuillez saisir les points de sang.");
+
+    const perks = Array.from(document.querySelectorAll('.gauntlet-perk-input')).map(i => i.value || 'None');
+    
+    const roleState = state[role];
+    if (!validateGauntletBuild(char, perks, roleState.completed.length, role)) {
+        const unlockedChars = getUnlockedChars()[role === 'killer' ? 'killers' : 'survivors'];
+        const tier = getGauntletTierInfo(roleState.completed.length, unlockedChars.length);
+        return alert(`Votre build ne respecte pas les restrictions du Gauntlet (${tier.perks}).`);
+    }
+
+    let isWin = false;
+    let kills = null, escaped = null, gens = 0, opponent = null, equipment = [];
+
+    if (role === 'killer') {
+        kills = document.getElementById('gauntlet-kills').value;
+        gens = document.getElementById('gauntlet-killer-gens').value;
+        isWin = parseInt(kills) >= 3;
+        equipment = [document.getElementById('gauntlet-kill-addon-1').value, document.getElementById('gauntlet-kill-addon-2').value];
+    } else {
+        escaped = document.getElementById('gauntlet-escaped').value;
+        gens = document.getElementById('gauntlet-gens-done').value;
+        opponent = document.getElementById('gauntlet-opponent-killer').value;
+        isWin = (escaped === 'Porte' || escaped === 'Trappe');
+        equipment = [document.getElementById('gauntlet-surv-item').value, document.getElementById('gauntlet-surv-addon-1').value, document.getElementById('gauntlet-surv-addon-2').value];
+    }
+
+    const history = JSON.parse(localStorage.getItem('dbd_stats')) || [];
+    history.push({
+        date: new Date().toLocaleString(),
+        role: role,
+        character: char,
+        opponent: opponent,
+        perks: perks,
+        equipment: equipment,
+        bloodpoints: bp,
+        kills: kills,
+        escaped: escaped,
+        gens: gens,
+        ignoreGauntlet: false
+    });
+    localStorage.setItem('dbd_stats', JSON.stringify(history));
+
+    recordGauntletResult(isWin, role);
+}
+
+function updateGauntletKillerAddons() {
+    const state = getGauntletState();
+    const killerName = state.killer.current;
+    if (!killerName) return;
+    const addons = equipmentData.killerAddons[killerName] || [];
+    updateDatalist('kill-addons-options', addons);
+    updateImg(document.getElementById('gauntlet-kill-addon-1-icon'), 'Addons', document.getElementById('gauntlet-kill-addon-1').value, killerName);
+    updateImg(document.getElementById('gauntlet-kill-addon-2-icon'), 'Addons', document.getElementById('gauntlet-kill-addon-2').value, killerName);
+}
+
+function updateGauntletSurvivorAddons() {
+    const itemType = document.getElementById('gauntlet-surv-item').value;
+    const itemEntry = equipmentData.survivorAddons.find(entry => 
+        itemType.toLowerCase().includes(entry.itemType.toLowerCase())
+    );
+    const addons = itemEntry ? itemEntry.addons : [];
+    updateDatalist('surv-addons-options', addons);
+    updateImg(document.getElementById('gauntlet-surv-addon-1-icon'), 'Addons', document.getElementById('gauntlet-surv-addon-1').value);
+    updateImg(document.getElementById('gauntlet-surv-addon-2-icon'), 'Addons', document.getElementById('gauntlet-surv-addon-2').value);
 }
 
 /**

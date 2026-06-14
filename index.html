@@ -186,6 +186,79 @@
                     <p style="margin: 5px 0;">3. Enregistrez le match : le Gauntlet se mettra à jour automatiquement !</p>
                     <p id="gauntlet-instr-win-cond" style="margin: 5px 0; font-weight: bold; color: #ff4d4d;"></p>
                 </div>
+
+                <div id="gauntlet-quick-form" style="margin-top:20px; padding:20px; border-top: 1px solid #333; background: rgba(0,0,0,0.1); border-radius: 8px;">
+                    <datalist id="gauntlet-unique-perks-options"></datalist>
+                    <h4 style="border:none; margin-top:0;">Enregistrer le résultat</h4>
+                    
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        <div id="gauntlet-killer-outcome" style="display:none; flex-direction:column; gap:10px;">
+                            <div class="result-row">
+                                <label>Survivants éliminés (0-4) :</label>
+                                <select id="gauntlet-kills"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+                            </div>
+                            <div class="result-row">
+                                <label>Générateurs terminés :</label>
+                                <input type="range" id="gauntlet-killer-gens" min="0" max="5" value="0" oninput="this.nextElementSibling.value = this.value">
+                                <output>0</output>
+                            </div>
+                        </div>
+                        <div id="gauntlet-survivor-outcome" style="display:none;">
+                            <div class="survivor-results-container">
+                                <div class="field">
+                                    <label>Tueur affronté :</label>
+                                    <div class="selection-slot character-slot opponent-slot">
+                                        <img id="gauntlet-opponent-icon" src="" alt="">
+                                        <select id="gauntlet-opponent-killer"></select>
+                                    </div>
+                                </div>
+                                <div class="survivor-results-details">
+                                    <div class="result-row">
+                                        <label>Générateurs terminés :</label>
+                                        <input type="range" id="gauntlet-gens-done" min="0" max="5" value="0" oninput="this.nextElementSibling.value = this.value">
+                                        <output>0</output>
+                                    </div>
+                                    <div class="result-row">
+                                        <label>Issue :</label>
+                                        <select id="gauntlet-escaped">
+                                            <option value="Mort">Mort</option>
+                                            <option value="Trappe">Trappe</option>
+                                            <option value="Porte">Porte</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="result-row">
+                            <label>Points de sang :</label>
+                            <input type="number" id="gauntlet-bp" placeholder="0" style="width:120px;">
+                        </div>
+
+                        <div class="perks" style="justify-content: center;">
+                            <div class="selection-slot perk-container"><img class="perk-icon" src="" alt=""><input type="text" placeholder="Perk 1" class="gauntlet-perk-input" list="gauntlet-unique-perks-options" autocomplete="off"></div>
+                            <div class="selection-slot perk-container"><img class="perk-icon" src="" alt=""><input type="text" placeholder="Perk 2" class="gauntlet-perk-input" list="perks-options" autocomplete="off"></div>
+                            <div class="selection-slot perk-container"><img class="perk-icon" src="" alt=""><input type="text" placeholder="Perk 3" class="gauntlet-perk-input" list="perks-options" autocomplete="off"></div>
+                            <div class="selection-slot perk-container"><img class="perk-icon" src="" alt=""><input type="text" placeholder="Perk 4" class="gauntlet-perk-input" list="perks-options" autocomplete="off"></div>
+                        </div>
+
+                        <div id="gauntlet-equipment" style="display: flex; justify-content: center;">
+                            <div id="gauntlet-survivor-equipment-fields" style="display:none;" class="perks">
+                                <div class="selection-slot equip-item"><img id="gauntlet-surv-item-icon" alt=""><input type="text" id="gauntlet-surv-item" placeholder="Item" list="items-options" autocomplete="off"></div>
+                                <div class="selection-slot equip-item"><img id="gauntlet-surv-addon-1-icon" alt=""><input type="text" id="gauntlet-surv-addon-1" placeholder="Add-on 1" list="surv-addons-options" autocomplete="off"></div>
+                                <div class="selection-slot equip-item"><img id="gauntlet-surv-addon-2-icon" alt=""><input type="text" id="gauntlet-surv-addon-2" placeholder="Add-on 2" list="surv-addons-options" autocomplete="off"></div>
+                            </div>
+                            <div id="gauntlet-killer-equipment-fields" style="display:none;" class="perks">
+                                <div class="selection-slot equip-item"><img id="gauntlet-kill-addon-1-icon" alt=""><input type="text" id="gauntlet-kill-addon-1" placeholder="Add-on 1" list="kill-addons-options" autocomplete="off"></div>
+                                <div class="selection-slot equip-item"><img id="gauntlet-kill-addon-2-icon" alt=""><input type="text" id="gauntlet-kill-addon-2" placeholder="Add-on 2" list="kill-addons-options" autocomplete="off"></div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="saveMatchFromGauntlet()">Valider Match</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
