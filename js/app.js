@@ -1458,10 +1458,10 @@ function renderStats() {
 
     const labels = Object.keys(statsByDay).sort();
     const killRateData = labels.map(day => statsByDay[day].killerGames > 0 
-        ? ((statsByDay[day].kills / (statsByDay[day].killerGames * 4)) * 100).toFixed(1) 
+        ? Math.round((statsByDay[day].kills / (statsByDay[day].killerGames * 4)) * 1000) / 10
         : null);
     const escapeRateData = labels.map(day => statsByDay[day].survivorGames > 0 
-        ? ((statsByDay[day].escapes / statsByDay[day].survivorGames) * 100).toFixed(1) 
+        ? Math.round((statsByDay[day].escapes / statsByDay[day].survivorGames) * 1000) / 10
         : null);
 
     if (killerChart) killerChart.destroy();
@@ -1665,29 +1665,42 @@ function renderTopStats(history) {
 function createPerformanceChart(canvasId, label, labels, data, color) {
     const ctx = document.getElementById(canvasId).getContext('2d');
     return new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: labels,
             datasets: [{
                 label: label,
-                data: lineLineData(data),
+                data: data,
+                backgroundColor: color + '80', // Opacité augmentée pour les bâtons
                 borderColor: color,
-                backgroundColor: color + '33',
-                fill: true,
-                tension: 0.3
+                borderWidth: 1
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
             scales: {
-                y: { beginAtZero: true, max: 100, title: { display: true, text: '%' } }
+                y: { 
+                    beginAtZero: true, 
+                    max: 100, 
+                    title: { display: true, text: '%', color: '#ccc' },
+                    grid: { color: 'rgba(255, 255, 255, 0.15)' },
+                    border: { display: true, color: 'rgba(255, 255, 255, 0.5)' },
+                    ticks: { color: '#ccc' }
+                },
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.15)' },
+                    border: { display: true, color: 'rgba(255, 255, 255, 0.5)' },
+                    ticks: { color: '#ccc' }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: '#ccc' }
+                }
             }
         }
     });
-}
-
-function lineLineData(data) {
-    // Helper pour que Chart.js ne trace pas de ligne vers les valeurs nulles
-    return data.map(v => v === null ? undefined : v);
 }
 
 function saveMatch() {

@@ -543,10 +543,18 @@
 
         <div class="stats-zone">
           <h2>Performances (Taux de réussite %)</h2>
-          <h3>Tueur</h3>
-          <canvas id="killerChart" width="400" height="120"></canvas>
-          <h3>Survivant</h3>
-          <canvas id="survivorChart" width="400" height="120"></canvas>
+          <div style="margin-bottom: 30px;">
+            <h3 style="border: none; margin-bottom: 10px;">Tueur</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="killerChart"></canvas>
+            </div>
+          </div>
+          <div>
+            <h3 style="border: none; margin-bottom: 10px;">Survivant</h3>
+            <div style="height: 250px; position: relative;">
+              <canvas id="survivorChart"></canvas>
+            </div>
+          </div>
         </div>
       </section>
     </div>
