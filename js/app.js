@@ -2306,6 +2306,23 @@ function renderGauntletUI() {
     document.getElementById('gauntlet-progress-fill').style.width = (count / total * 100) + '%';
     document.getElementById('gauntlet-count').innerText = `${count} / ${total} ${state.activeRole === 'killer' ? 'Tueurs' : 'Survivants'}`;
 
+    // Ajout des indicateurs de paliers (Tiers)
+    const markersContainer = document.getElementById('gauntlet-markers');
+    if (markersContainer) {
+        markersContainer.innerHTML = '';
+        for (let i = 1; i <= 4; i++) {
+            const marker = document.createElement('div');
+            marker.style.position = 'absolute';
+            marker.style.left = (i * 20) + '%';
+            marker.style.top = '0';
+            marker.style.width = '2px';
+            marker.style.height = '100%';
+            marker.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+            marker.style.zIndex = '2';
+            markersContainer.appendChild(marker);
+        }
+    }
+
     const rollZone = document.getElementById('gauntlet-rolled-char');
     const quickForm = document.getElementById('gauntlet-quick-form');
     
