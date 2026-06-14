@@ -99,7 +99,7 @@
             <div class="perks" style="justify-content: center;">
               <div class="selection-slot perk-container">
                 <img class="perk-icon hc-perk-icon" src="" alt="">
-                <input type="text" placeholder="Perk 1" class="hc-perk-input" list="hc-perks-options" autocomplete="off">
+                <input type="text" placeholder="Perk 1" class="hc-perk-input" list="hc-unique-perks-options" autocomplete="off">
               </div>
               <div class="selection-slot perk-container">
                 <img class="perk-icon hc-perk-icon" src="" alt="">
@@ -126,8 +126,42 @@
               </div>
             </div>
             <datalist id="hc-perks-options"></datalist>
+            <datalist id="hc-unique-perks-options"></datalist>
             <datalist id="hc-surv-addons-options"></datalist>
             <datalist id="hc-kill-addons-options"></datalist>
+          </div>
+
+          <div id="hc-results-section" style="margin-top: 20px;">
+            <div id="hc-killer-stats" style="display:none; flex-direction:column; gap:10px;">
+                <div class="result-row" style="justify-content: center;">
+                    <label>Générateurs terminés :</label>
+                    <input type="range" id="hc-killer-gens" min="0" max="5" value="0" oninput="this.nextElementSibling.value = this.value">
+                    <output>0</output>
+                </div>
+            </div>
+            <div id="hc-survivor-stats" style="display:none;">
+                <div class="survivor-results-container" style="justify-content: center;">
+                    <div class="field">
+                        <label>Tueur affronté :</label>
+                        <div class="selection-slot character-slot opponent-slot">
+                            <img id="hc-opponent-icon" src="" alt="">
+                            <select id="hc-opponent-killer"></select>
+                        </div>
+                    </div>
+                    <div class="survivor-results-details">
+                        <div class="result-row">
+                            <label>Générateurs terminés :</label>
+                            <input type="range" id="hc-gens-done" min="0" max="5" value="0" oninput="this.nextElementSibling.value = this.value">
+                            <output>0</output>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div class="result-row" style="justify-content: center; margin: 10px 0;">
+              <label>Points de sang :</label>
+              <input type="number" id="hc-bp" placeholder="0" style="width:120px;">
           </div>
 
           <div class="result-row" style="justify-content: center; margin: 20px 0;">
@@ -189,6 +223,18 @@
 
                 <div id="gauntlet-quick-form" style="margin-top:20px; padding:20px; border-top: 1px solid #333; background: rgba(0,0,0,0.1); border-radius: 8px;">
                     <datalist id="gauntlet-unique-perks-options"></datalist>
+                    
+                    <!-- Gestion des Builds Gauntlet -->
+                    <div class="stats-zone" style="background: rgba(0,0,0,0.2); margin-bottom: 20px;">
+                        <h4 style="border:none; margin-top:0;">Gestion du Build</h4>
+                        <input type="text" id="gauntlet-build-name" placeholder="Nom du build">
+                        <button onclick="saveBuild()">Enregistrer ce build</button>
+                        <button onclick="resetCurrentBuild()">Réinitialiser le build</button>
+                        <br><br>
+                        <label for="gauntlet-load-build-select">Charger un build :</label>
+                        <select id="gauntlet-load-build-select" onchange="applyBuild(this.value)"><option value="">-- Sélectionner --</option></select>
+                    </div>
+
                     <h4 style="border:none; margin-top:0;">Enregistrer le résultat</h4>
                     
                     <div style="display:flex; flex-direction:column; gap:15px;">

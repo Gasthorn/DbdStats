@@ -276,10 +276,25 @@ function setHardcoreRole(role) {
     // Réinitialisation du build Hardcore
     document.querySelectorAll('.hc-perk-input').forEach(input => input.value = 'None');
     document.querySelectorAll('.hc-perk-icon').forEach(img => updateImg(img, 'Perks', 'None'));
+    document.getElementById('hc-bp').value = '';
+    document.getElementById('hc-killer-stats').style.display = role === 'killer' ? 'flex' : 'none';
+    document.getElementById('hc-survivor-stats').style.display = role === 'survivor' ? 'block' : 'none';
+    
     if (role === 'survivor') {
+        const opponentSelect = document.getElementById('hc-opponent-killer');
+        opponentSelect.innerHTML = '<option value="None">None</option>';
+        perksData.killers.forEach(k => {
+            let opt = document.createElement('option'); opt.value = k; opt.innerHTML = k;
+            opponentSelect.appendChild(opt);
+        });
+        updateImg(document.getElementById('hc-opponent-icon'), 'Characters', opponentSelect.value);
+        document.getElementById('hc-gens-done').value = 0;
+        document.getElementById('hc-gens-done').nextElementSibling.value = 0;
         ['hc-surv-item', 'hc-surv-addon-1', 'hc-surv-addon-2'].forEach(id => document.getElementById(id).value = 'None');
         ['hc-surv-item-icon', 'hc-surv-addon-1-icon', 'hc-surv-addon-2-icon'].forEach(id => updateImg(document.getElementById(id), id.includes('addon') ? 'Addons' : 'Items', 'None'));
     } else {
+        document.getElementById('hc-killer-gens').value = 0;
+        document.getElementById('hc-killer-gens').nextElementSibling.value = 0;
         ['hc-kill-addon-1', 'hc-kill-addon-2'].forEach(id => document.getElementById(id).value = 'None');
         ['hc-kill-addon-1-icon', 'hc-kill-addon-2-icon'].forEach(id => updateImg(document.getElementById(id), 'Addons', 'None'));
     }
@@ -339,6 +354,7 @@ function selectHardcoreChar(name, element) {
     document.getElementById('hc-character').value = name;
     document.getElementById('hc-selected-char-name').innerText = name;
     updateHCPerksDatalist();
+    updateHCUniquePerksDatalist();
     if (currentRole === 'killer') updateHCKillerAddons();
 }
 
@@ -359,6 +375,22 @@ function updateHCSurvivorAddons() {
     updateImg(document.getElementById('hc-surv-addon-2-icon'), 'Addons', document.getElementById('hc-surv-addon-2').value);
 }
 
+function updateHCUniquePerksDatalist() {
+    const char = document.getElementById('hc-character').value;
+    if (!char) return;
+    const rolePerks = currentRole === 'killer' ? perksData.killer : perksData.survivor;
+    const charPerks = rolePerks.filter(p => 
+        p.owner.toLowerCase().replace(/[^a-z0-9]/g, '') === char.toLowerCase().replace(/[^a-z0-9]/g, '')
+    );
+    const uniqueDatalist = document.getElementById('hc-unique-perks-options');
+    uniqueDatalist.innerHTML = '';
+    charPerks.forEach(p => {
+        let opt = document.createElement('option');
+        opt.value = p.name;
+        uniqueDatalist.appendChild(opt);
+    });
+}
+
 function saveHardcoreMatch() {
     const state = getHardcoreState();
     const char = document.getElementById('hc-character').value;
@@ -367,6 +399,7 @@ function saveHardcoreMatch() {
 
     if (!char) return alert("Veuillez sélectionner un personnage !");
     
+    const bp = document.getElementById('hc-bp').value || 0;
     const perks = Array.from(document.querySelectorAll('.hc-perk-input')).map(input => input.value);
     const equipment = currentRole === 'survivor' 
         ? [document.getElementById('hc-surv-item').value, document.getElementById('hc-surv-addon-1').value, document.getElementById('hc-surv-addon-2').value]
@@ -395,7 +428,9 @@ function saveHardcoreMatch() {
         mode: 'hardcore',
         pips: pips,
         didDie: didDie,
-        bloodpoints: 0,
+        bloodpoints: bp,
+        opponent: currentRole === 'survivor' ? document.getElementById('hc-opponent-killer').value : null,
+        gens: currentRole === 'killer' ? document.getElementById('hc-killer-gens').value : document.getElementById('hc-gens-done').value,
         perks: perks,
         equipment: equipment
     };
@@ -1228,15 +1263,30 @@ function renderIconsIndex() {
 
 function saveBuild() {
     const isHC = document.getElementById('hardcore-view').style.display !== 'none';
-    const prefix = isHC ? 'hc-' : '';
+    const isGauntlet = document.getElementById('gauntlet-view').style.display !== 'none';
+    const prefix = isHC ? 'hc-' : (isGauntlet ? 'gauntlet-' : '');
     const name = document.getElementById(prefix + 'build-name').value;
     if (!name) return alert("Veuillez donner un nom à votre build.");
 
+    const role = isGauntlet ? getGauntletState().activeRole : currentRole;
+
+    let character;
+    if (isGauntlet) {
+        character = getGauntletState()[role].current;
+    } else {
+        character = document.getElementById(isHC ? 'hc-character' : 'character').value;
+    }
+
+    let perkSelector;
+    if (isHC) perkSelector = '.hc-perk-input';
+    else if (isGauntlet) perkSelector = '.gauntlet-perk-input';
+    else perkSelector = '#match-form .perk-input';
+
     const build = {
-        role: currentRole,
-        character: document.getElementById(isHC ? 'hc-character' : 'character').value,
-        perks: Array.from(document.querySelectorAll(isHC ? '.hc-perk-input' : '.perk-input')).map(input => input.value),
-        equipment: currentRole === 'survivor' 
+        role: role,
+        character: character,
+        perks: Array.from(document.querySelectorAll(perkSelector)).map(input => input.value),
+        equipment: role === 'survivor' 
             ? [document.getElementById(prefix + 'surv-item').value, document.getElementById(prefix + 'surv-addon-1').value, document.getElementById(prefix + 'surv-addon-2').value]
             : [document.getElementById(prefix + 'kill-addon-1').value, document.getElementById(prefix + 'kill-addon-2').value]
     };
@@ -1251,14 +1301,17 @@ function saveBuild() {
 
 function renderBuildsList() {
     const builds = JSON.parse(localStorage.getItem('dbd_builds')) || {};
-    const selects = [document.getElementById('load-build-select'), document.getElementById('hc-load-build-select')];
+    const selects = [document.getElementById('load-build-select'), document.getElementById('hc-load-build-select'), document.getElementById('gauntlet-load-build-select')];
     
+    const isGauntlet = document.getElementById('gauntlet-view').style.display !== 'none';
+    const role = isGauntlet ? (getGauntletState().activeRole) : currentRole;
+
     selects.forEach(select => {
         if (!select) return;
         select.innerHTML = '<option value="">-- Sélectionner --</option>';
         Object.keys(builds).forEach(name => {
             // On ne propose que les builds correspondant au rôle actuel
-            if (builds[name].role === currentRole) {
+            if (builds[name].role === role) {
                 const opt = document.createElement('option');
                 opt.value = name;
                 opt.innerText = name;
@@ -1275,7 +1328,8 @@ function applyBuild(name) {
     if (!b) return;
 
     const isHC = document.getElementById('hardcore-view').style.display !== 'none';
-    const prefix = isHC ? 'hc-' : '';
+    const isGauntlet = document.getElementById('gauntlet-view').style.display !== 'none';
+    const prefix = isHC ? 'hc-' : (isGauntlet ? 'gauntlet-' : '');
 
     if (isHC) {
         document.getElementById('hc-character').value = b.character;
@@ -1284,14 +1338,23 @@ function applyBuild(name) {
             item.classList.toggle('selected', item.querySelector('img').title === b.character);
         });
         updateHCPerksDatalist();
+    } else if (isGauntlet) {
+        // En mode Gauntlet, le personnage est fixé par le tirage
     } else {
         document.getElementById('character').value = b.character;
         updateImg(document.getElementById('char-icon'), 'Characters', b.character);
     }
 
-    const container = document.getElementById(isHC ? 'hc-match-form' : 'match-form');
-    const perkInputs = container.querySelectorAll(isHC ? '.hc-perk-input' : '.perk-input');
-    const perkIcons = container.querySelectorAll(isHC ? '.hc-perk-icon' : '.perk-icon');
+    let container;
+    if (isHC) container = document.getElementById('hc-match-form');
+    else if (isGauntlet) container = document.getElementById('gauntlet-quick-form');
+    else container = document.getElementById('match-form');
+
+    const perkInputSelector = isHC ? '.hc-perk-input' : (isGauntlet ? '.gauntlet-perk-input' : '.perk-input');
+    const perkIconSelector = isHC ? '.hc-perk-icon' : (isGauntlet ? '.perk-icon' : '.perk-icon');
+
+    const perkInputs = container.querySelectorAll(perkInputSelector);
+    const perkIcons = container.querySelectorAll(perkIconSelector);
 
     b.perks.forEach((val, i) => {
         if (perkInputs[i]) {
@@ -1300,46 +1363,56 @@ function applyBuild(name) {
         }
     });
 
-    if (currentRole === 'survivor') {
+    if (b.role === 'survivor') {
         document.getElementById(prefix + 'surv-item').value = b.equipment[0];
         document.getElementById(prefix + 'surv-addon-1').value = b.equipment[1];
         document.getElementById(prefix + 'surv-addon-2').value = b.equipment[2];
-        if (isHC) updateHCSurvivorAddons(); else updateSurvivorAddons();
+        if (isHC) updateHCSurvivorAddons(); else if (isGauntlet) updateGauntletSurvivorAddons(); else updateSurvivorAddons();
         updateImg(document.getElementById(prefix + 'surv-item-icon'), 'Items', b.equipment[0]);
     } else {
         document.getElementById(prefix + 'kill-addon-1').value = b.equipment[0];
         document.getElementById(prefix + 'kill-addon-2').value = b.equipment[1];
-        if (isHC) updateHCKillerAddons(); else updateKillerAddons();
+        if (isHC) updateHCKillerAddons(); else if (isGauntlet) updateGauntletKillerAddons(); else updateKillerAddons();
     }
 }
 
 function resetCurrentBuild() {
     const isHC = document.getElementById('hardcore-view').style.display !== 'none';
-    const prefix = isHC ? 'hc-' : '';
+    const isGauntlet = document.getElementById('gauntlet-view').style.display !== 'none';
+    const prefix = isHC ? 'hc-' : (isGauntlet ? 'gauntlet-' : '');
 
     document.getElementById(prefix + 'build-name').value = '';
     const loadSelect = document.getElementById(prefix + 'load-build-select');
     if (loadSelect) loadSelect.value = '';
 
-    const container = document.getElementById(isHC ? 'hc-match-form' : 'match-form');
-    const perkInputs = container.querySelectorAll(isHC ? '.hc-perk-input' : '.perk-input');
-    const perkIcons = container.querySelectorAll(isHC ? '.hc-perk-icon' : '.perk-icon');
+    let container;
+    if (isHC) container = document.getElementById('hc-match-form');
+    else if (isGauntlet) container = document.getElementById('gauntlet-quick-form');
+    else container = document.getElementById('match-form');
+
+    const perkInputSelector = isHC ? '.hc-perk-input' : (isGauntlet ? '.gauntlet-perk-input' : '.perk-input');
+    const perkIconSelector = isHC ? '.hc-perk-icon' : (isGauntlet ? '.perk-icon' : '.perk-icon');
+
+    const perkInputs = container.querySelectorAll(perkInputSelector);
+    const perkIcons = container.querySelectorAll(perkIconSelector);
 
     perkInputs.forEach((input, i) => {
         input.value = 'None';
         updateImg(perkIcons[i], 'Perks', 'None');
     });
 
-    if (currentRole === 'survivor') {
+    const role = isGauntlet ? getGauntletState().activeRole : currentRole;
+
+    if (role === 'survivor') {
         document.getElementById(prefix + 'surv-item').value = 'None';
         document.getElementById(prefix + 'surv-addon-1').value = 'None';
         document.getElementById(prefix + 'surv-addon-2').value = 'None';
         updateImg(document.getElementById(prefix + 'surv-item-icon'), 'Items', 'None');
-        if (isHC) updateHCSurvivorAddons(); else updateSurvivorAddons();
-    } else if (currentRole === 'killer') {
+        if (isHC) updateHCSurvivorAddons(); else if (isGauntlet) updateGauntletSurvivorAddons(); else updateSurvivorAddons();
+    } else if (role === 'killer') {
         document.getElementById(prefix + 'kill-addon-1').value = 'None';
         document.getElementById(prefix + 'kill-addon-2').value = 'None';
-        if (isHC) updateHCKillerAddons(); else updateKillerAddons();
+        if (isHC) updateHCKillerAddons(); else if (isGauntlet) updateGauntletKillerAddons(); else updateKillerAddons();
     }
 }
 
@@ -2022,6 +2095,11 @@ window.onload = async () => {
         updateImg(document.getElementById('hc-kill-addon-2-icon'), 'Addons', e.target.value, char);
     });
 
+    document.getElementById('hc-opponent-killer').addEventListener('change', (e) => {
+        updateImg(document.getElementById('hc-opponent-icon'), 'Characters', e.target.value);
+        e.target.blur();
+    });
+
     document.getElementById('gauntlet-surv-item').addEventListener('input', (e) => {
         updateGauntletSurvivorAddons();
         updateImg(document.getElementById('gauntlet-surv-item-icon'), 'Items', e.target.value);
@@ -2201,6 +2279,8 @@ function renderGauntletUI() {
         document.getElementById('gauntlet-completed-section').style.display = 'none';
         return;
     }
+
+    renderBuildsList();
 
     const roleState = state[state.activeRole];
     const count = roleState.completed.length;
