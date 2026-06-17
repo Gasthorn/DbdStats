@@ -171,7 +171,11 @@
             <input type="checkbox" id="hc-did-die">
           </div>
           
-          <button onclick="saveHardcoreMatch()">Valider le résultat</button>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="saveHardcoreMatch(false)">Valider le résultat</button>
+            <button onclick="saveHardcoreMatch(true)" class="btn-secondary" title="Enregistre dans l'historique mais ignore pour le défi">Enregistrer & Ignorer défi</button>
+            <button onclick="resetHardcoreUI()" class="btn-secondary">Annuler</button>
+          </div>
         </div>
       </div>
     </div>
@@ -301,8 +305,10 @@
                             </div>
                         </div>
 
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="saveMatchFromGauntlet()">Valider Match</button>
+                        <div style="display:flex; gap:10px; justify-content: center;">
+                            <button onclick="saveMatchFromGauntlet(false)">Valider Match</button>
+                            <button onclick="saveMatchFromGauntlet(true)" class="btn-secondary" title="Enregistre dans l'historique mais ignore pour le défi">Enregistrer & Ignorer défi</button>
+                            <button onclick="resetGauntletForm()" class="btn-secondary">Annuler</button>
                         </div>
                     </div>
                 </div>
@@ -439,19 +445,14 @@
               </div>
             </div>
           </div>
+
+          <div id="bp-field" class="result-row" style="margin-top: 20px; border-top: 1px solid #222; padding-top: 15px;">
+            <label>Points de sang :</label>
+            <input type="number" id="bloodpoints" placeholder="0">
+          </div>
         </div>
 
-        <div id="bp-field" class="result-row">
-          <label>Points de sang :</label>
-          <input type="number" id="bloodpoints">
-        </div>
-
-        <div class="result-row">
-          <label>Ignorer pour le Gauntlet (Déco/Cheater) :</label>
-          <input type="checkbox" id="ignore-gauntlet">
-        </div>
-
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
           <button onclick="saveMatch()" id="save-button" disabled>Enregistrer la partie</button>
           <button onclick="resetUI()" class="btn-secondary">Annuler / Retour</button>
         </div>

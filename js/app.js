@@ -427,6 +427,7 @@ function saveHardcoreMatch() {
         role: currentRole,
         character: char,
         mode: 'hardcore',
+        ignoreChallenge: ignoreChallenge,
         pips: pips,
         didDie: didDie,
         bloodpoints: bp,
@@ -443,12 +444,14 @@ function saveHardcoreMatch() {
         history.push(match);
     }
 
-    if (currentRole === 'killer') state.killerPips += pips;
-    else state.survivorPips += pips;
+    if (!ignoreChallenge) {
+        if (currentRole === 'killer') state.killerPips += pips;
+        else state.survivorPips += pips;
 
-    if (didDie) {
-        if (currentRole === 'killer') state.deadKillers.push(char);
-        else state.deadSurvivors.push(char);
+        if (didDie) {
+            if (currentRole === 'killer') state.deadKillers.push(char);
+            else state.deadSurvivors.push(char);
+        }
     }
 
     localStorage.setItem('dbd_hc_state', JSON.stringify(state));
@@ -574,7 +577,12 @@ function getIconPath(category, name, manualOwner = null) {
         // Recherche dans les survivants
         index = perksData.survivors.indexOf(name);
         if (index !== -1) {
-            charTypePrefix = 'S';
+            if(index == 18){
+                charTypePrefix = "T_UI_S";
+            }
+            else{
+                charTypePrefix = 'S';
+            }
             charId = String(index + 1).padStart(2, '0');
             return `${baseCharPath}${prefix}${charTypePrefix}${charId}_${normalizeForCharacters(fileNamePart)}_Portrait.png`;
         }
@@ -1042,13 +1050,6 @@ function setRole(role) {
     document.getElementById('survivor-stats').style.display = role === 'survivor' ? 'block' : 'none';
     
     validateForm();
-    // Déplacement dynamique du champ Points de Sang pour s'adapter au layout
-    const bpField = document.getElementById('bp-field');
-    if (role === 'killer') {
-        document.getElementById('killer-stats').appendChild(bpField);
-    } else {
-        document.querySelector('.survivor-results-details').appendChild(bpField);
-    }
 
     document.getElementById('survivor-equipment-fields').style.display = role === 'survivor' ? 'block' : 'none';
     document.getElementById('killer-equipment-fields').style.display = role === 'killer' ? 'block' : 'none';
@@ -1144,7 +1145,6 @@ function resetUI() {
     document.getElementById('kills').value = '';
     document.getElementById('killer-gens').value = 0;
     document.getElementById('killer-gens').nextElementSibling.value = 0;
-    document.getElementById('ignore-gauntlet').checked = false;
     
     const saveBtn = document.getElementById('save-button');
     if (saveBtn) {
@@ -1707,7 +1707,6 @@ function createPerformanceChart(canvasId, label, labels, data, color) {
 
 function saveMatch() {
     const perks = Array.from(document.querySelectorAll('#match-form .perk-input')).map(input => input.value || 'None');
-    const ignoreGauntlet = document.getElementById('ignore-gauntlet').checked;
     
     const match = {
         date: new Date().toLocaleString(),
@@ -1721,8 +1720,7 @@ function saveMatch() {
         bloodpoints: document.getElementById('bloodpoints').value,
         kills: currentRole === 'killer' ? document.getElementById('kills').value : null,
         escaped: currentRole === 'survivor' ? (document.getElementById('escaped').value || 'Mort') : null,
-        gens: currentRole === 'killer' ? document.getElementById('killer-gens').value : document.getElementById('gens-done').value,
-        ignoreGauntlet: ignoreGauntlet
+        gens: currentRole === 'killer' ? document.getElementById('killer-gens').value : document.getElementById('gens-done').value
     };
 
     let history = JSON.parse(localStorage.getItem('dbd_stats')) || [];
@@ -1739,26 +1737,6 @@ function saveMatch() {
     
     localStorage.setItem('dbd_stats', JSON.stringify(history));
 
-    // Intégration Gauntlet : si c'est une nouvelle partie et que le perso correspond au tirage actif du Gauntlet
-    if (isNewMatch && !ignoreGauntlet) {
-        const gauntletState = getGauntletState();
-        const activeRole = gauntletState.activeRole;
-        
-        if (activeRole === currentRole) {
-            const roleState = gauntletState[activeRole];
-            if (roleState.current && roleState.current === match.character) {
-                if (validateGauntletBuild(match.character, match.perks, roleState.completed.length, activeRole)) {
-                    let isWin = false;
-                    if (activeRole === 'survivor') {
-                        isWin = (match.escaped === 'Trappe' || match.escaped === 'Porte' || match.escaped === true);
-                    } else {
-                        isWin = parseInt(match.kills || 0) >= 3;
-                    }
-                    recordGauntletResult(isWin, activeRole);
-                }
-            }
-        }
-    }
     alert('Partie enregistrée !');
     renderHistory();
     resetUI();
@@ -1781,6 +1759,8 @@ function renderHistory() {
             li.classList.add('escaped-match');
         }
 
+    const ignoredBadge = match.ignoreChallenge || match.ignoreGauntlet ? '<span style="background:#444; color:#aaa; font-size:0.7em; padding:2px 5px; border-radius:3px; margin-right:5px;">IGNORÉ</span>' : '';
+
         const charIcon = `<img src="${getIconPath('Characters', match.character)}" style="width:24px; vertical-align:middle; margin-right:5px;" onerror="this.style.display='none'">`;
         let resultText = "";
         if (match.mode === 'hardcore') {
@@ -1798,7 +1778,7 @@ function renderHistory() {
         }
 
         li.innerHTML = `
-            ${charIcon} <strong>${match.date}</strong> - ${match.character} (${resultText}) - ${match.bloodpoints} BP
+        ${ignoredBadge}${charIcon} <strong>${match.date}</strong> - ${match.character} (${resultText}) - ${match.bloodpoints} BP
             <button onclick="editMatch(${match.originalIdx})">Modifier</button>
             <button onclick="deleteMatch(${match.originalIdx})">Supprimer</button>
         `;
@@ -2001,7 +1981,6 @@ function editMatch(index) {
         showView('tracker');
         editingMatchIndex = index;
         setRole(match.role);
-        document.getElementById('ignore-gauntlet').checked = !!match.ignoreGauntlet;
 
     document.getElementById('character').value = match.character;
     updateImg(document.getElementById('char-icon'), 'Characters', match.character);
@@ -2543,7 +2522,7 @@ function recordGauntletResult(win, role) {
 /**
  * Enregistre le match et valide l'étape du Gauntlet.
  */
-function saveMatchFromGauntlet() {
+function saveMatchFromGauntlet(ignoreChallenge = false) {
     const state = getGauntletState();
     const role = state.activeRole;
     const char = state[role].current;
@@ -2588,11 +2567,16 @@ function saveMatchFromGauntlet() {
         kills: kills,
         escaped: escaped,
         gens: gens,
-        ignoreGauntlet: false
+        ignoreGauntlet: ignoreChallenge
     });
     localStorage.setItem('dbd_stats', JSON.stringify(history));
 
-    recordGauntletResult(isWin, role);
+    if (!ignoreChallenge) {
+        recordGauntletResult(isWin, role);
+    } else {
+        renderGauntletUI();
+        resetGauntletForm();
+    }
 }
 
 function updateGauntletKillerAddons() {
