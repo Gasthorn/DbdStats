@@ -90,6 +90,7 @@
             <input type="text" id="hc-build-name" placeholder="Nom du build">
             <button onclick="saveBuild()">Enregistrer ce build</button>
             <button onclick="resetCurrentBuild()">Réinitialiser le build</button>
+            <button onclick="deleteBuild()" class="btn-secondary">Supprimer le build</button>
             <br><br>
             <label for="hc-load-build-select">Charger un build :</label>
             <select id="hc-load-build-select" onchange="applyBuild(this.value)"><option value="">-- Sélectionner --</option></select>
@@ -235,6 +236,7 @@
                         <input type="text" id="gauntlet-build-name" placeholder="Nom du build">
                         <button onclick="saveBuild()">Enregistrer ce build</button>
                         <button onclick="resetCurrentBuild()">Réinitialiser le build</button>
+                        <button onclick="deleteBuild()" class="btn-secondary">Supprimer le build</button>
                         <br><br>
                         <label for="gauntlet-load-build-select">Charger un build :</label>
                         <select id="gauntlet-load-build-select" onchange="applyBuild(this.value)"><option value="">-- Sélectionner --</option></select>
@@ -353,6 +355,7 @@
           <input type="text" id="build-name" placeholder="Nom du build (ex: Genrush, Anti-Loop)">
           <button onclick="saveBuild()">Enregistrer ce build</button>
           <button onclick="resetCurrentBuild()">Réinitialiser le build</button>
+          <button onclick="deleteBuild()" class="btn-secondary">Supprimer le build</button>
           <br><br>
           <label for="load-build-select">Charger un build :</label>
           <select id="load-build-select" onchange="applyBuild(this.value)"><option value="">-- Sélectionner --</option></select>

@@ -392,7 +392,7 @@ function updateHCUniquePerksDatalist() {
     });
 }
 
-function saveHardcoreMatch() {
+function saveHardcoreMatch(ignoreChallenge = false) {
     const state = getHardcoreState();
     const char = document.getElementById('hc-character').value;
     const pips = parseInt(document.getElementById('hc-pips-earned').value);
@@ -1049,6 +1049,16 @@ function setRole(role) {
     document.getElementById('killer-stats').style.display = role === 'killer' ? 'block' : 'none';
     document.getElementById('survivor-stats').style.display = role === 'survivor' ? 'block' : 'none';
     
+    // Déplacement et affichage du champ Points de Sang
+    const bpField = document.getElementById('bp-field');
+    if (bpField) {
+        bpField.style.display = 'flex';
+        const target = (role === 'killer') 
+            ? document.getElementById('killer-stats') 
+            : document.querySelector('.survivor-results-details');
+        if (target) target.appendChild(bpField);
+    }
+
     validateForm();
 
     document.getElementById('survivor-equipment-fields').style.display = role === 'survivor' ? 'block' : 'none';
@@ -1299,6 +1309,26 @@ function saveBuild() {
     
     alert(`Build "${name}" enregistré !`);
     renderBuildsList();
+}
+
+function deleteBuild() {
+    const isHC = document.getElementById('hardcore-view').style.display !== 'none';
+    const isGauntlet = document.getElementById('gauntlet-view').style.display !== 'none';
+    const prefix = isHC ? 'hc-' : (isGauntlet ? 'gauntlet-' : '');
+    const select = document.getElementById(prefix + 'load-build-select');
+    const buildName = select.value;
+
+    if (!buildName) return alert("Veuillez sélectionner un build à supprimer.");
+
+    if (confirm(`Voulez-vous vraiment supprimer le build "${buildName}" ?`)) {
+        let builds = JSON.parse(localStorage.getItem('dbd_builds')) || {};
+        delete builds[buildName];
+        localStorage.setItem('dbd_builds', JSON.stringify(builds));
+        
+        alert(`Build "${buildName}" supprimé.`);
+        resetCurrentBuild();
+        renderBuildsList();
+    }
 }
 
 function renderBuildsList() {
@@ -2460,6 +2490,14 @@ function renderGauntletUI() {
     });
 }
 
+function resetGauntletForm() {
+    const quickForm = document.getElementById('gauntlet-quick-form');
+    if (quickForm) {
+        quickForm.dataset.currentChar = ''; 
+    }
+    renderGauntletUI();
+}
+
 function rollGauntletSurvivor() {
     const state = getGauntletState();
     if (!state.activeRole) return;
@@ -2574,8 +2612,8 @@ function saveMatchFromGauntlet(ignoreChallenge = false) {
     if (!ignoreChallenge) {
         recordGauntletResult(isWin, role);
     } else {
-        renderGauntletUI();
-        resetGauntletForm();
+        alert("Partie enregistrée dans l'historique (Défi Gauntlet ignoré).");
+        renderGauntletUI(); // Le reset est géré par renderGauntletUI si ignoreChallenge est détecté indirectement ou via un appel manuel
     }
 }
 
