@@ -82,6 +82,7 @@ const characterFolderMap = {
     "The Skull Merchant": "Saturn",
     "Thalita Lyra": "Saturn",
     "Renato Lyra": "Saturn",
+    "The Slasher": "Sushi",
     "The Oni": "Sweden",
     "Yui Kimura": "Sweden",
     "The Deathslinger": "Ukraine",
@@ -529,7 +530,7 @@ function getIconPath(category, name, manualOwner = null) {
         let prefix = '';
         
         // Dossiers utilisant T_UI_ pour TOUS leurs assets (Portraits, Perks, Addons)
-        const uiPrefixAllFolders = ['Maple', 'Poutine', 'Quiche'];
+        const uiPrefixAllFolders = ['Maple', 'Poutine', 'Quiche', 'Sushi'];
 
         // Dossiers utilisant T_UI_ pour les Perks et les Addons (mais pas les Portraits)
         const uiPrefixPerksAndAddonsFolders = ['Gelato', 'Icecream', 'Ketchup'];
@@ -620,6 +621,7 @@ function getIconPath(category, name, manualOwner = null) {
             "Hex: Huntress Lullaby": "HuntressLullaby",
             "Hex: No One Escapes Death": "NoOneEscapesDeath",
             "Hex: Nothing but Misery": "NothingButMisery",
+            "Hex: Scared to Death": "ScaredToDeath",
             "Hex: The Third Seal": "TheThirdSeal",
             "Hex: Two Can Play": "twoCanPlay",
             "Machine Learning": "SelfAware",
@@ -648,7 +650,7 @@ function getIconPath(category, name, manualOwner = null) {
         const specialPrefixOwners = [
             "Sable Ward", "Taurie Cain", "Orela Rose", "Dustin Henderson",
             "Eleven", "The First", "Kwon Tae-young", "Kwon Tae-Young",
-            "Kwon Tae Young", "Alan Wake"
+            "Kwon Tae Young", "Alan Wake", "The Slasher"
         ];
 
         const perkFilePrefix = specialPrefixOwners.includes(owner) ? 'iconsPerks_' : 'iconPerks_';
