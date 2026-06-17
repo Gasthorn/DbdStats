@@ -1250,9 +1250,9 @@ function renderIconsIndex() {
             const wrapper = document.createElement('div');
             wrapper.className = sec.category === 'Characters' ? 'hc-char-item' : 'selection-slot';
             if (sec.category === 'Perks') wrapper.classList.add('perk-container');
+            wrapper.title = name;
             
             const img = document.createElement('img');
-            img.title = name;
             if (sec.category === 'Perks') img.className = 'perk-icon';
             
             wrapper.appendChild(img);
